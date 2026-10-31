@@ -1,0 +1,490 @@
+name: Build Your Player APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Fix file names and write project files
+        run: |
+          if [ ! -f index.html ]; then src=$(ls -1 index*.html 2>/dev/null | head -n1); [ -n "$src" ] && cp "$src" index.html; fi
+          ls -la
+          cat > package.json <<'EOF'
+          {
+            "name": "your-player",
+            "version": "1.0.0",
+            "private": true,
+            "dependencies": {
+              "@capacitor/core": "^6.0.0",
+              "@capacitor/android": "^6.0.0"
+            },
+            "devDependencies": {
+              "@capacitor/cli": "^6.0.0"
+            }
+          }
+          EOF
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.vibeplayer.video",
+            "appName": "Your Player",
+            "webDir": "www",
+            "server": {
+              "androidScheme": "https"
+            }
+          }
+          EOF
+          cat > make_icons.py <<'EOF'
+          from PIL import Image, ImageDraw, ImageFilter
+          S = 1024
+
+          def background():
+              img = Image.new('RGBA', (S, S))
+              d = ImageDraw.Draw(img)
+              for y in range(S):
+                  t = y / S
+                  d.line([(0, y), (S, y)], fill=(int(16 - 12 * t), int(34 - 28 * t), int(70 - 58 * t), 255))
+              glow = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+              g = ImageDraw.Draw(glow)
+              g.ellipse([-200, -250, 600, 450], fill=(40, 170, 255, 120))
+              g.ellipse([450, 600, 1250, 1300], fill=(150, 90, 255, 110))
+              return Image.alpha_composite(img, glow.filter(ImageFilter.GaussianBlur(120)))
+
+          def symbol(img, scale):
+              s = S * scale
+              cx, cy = S / 2, S / 2
+              pts = [(cx - s * 0.36, cy - s * 0.5), (cx - s * 0.36, cy + s * 0.5), (cx + s * 0.64, cy)]
+              w = int(s * 0.12)
+              mask = Image.new('L', (S, S), 0)
+              m = ImageDraw.Draw(mask)
+              m.polygon(pts, fill=255)
+              m.line(pts + [pts[0], pts[1]], fill=255, width=w, joint='curve')
+              for p in pts:
+                  m.ellipse([p[0] - w / 2, p[1] - w / 2, p[0] + w / 2, p[1] + w / 2], fill=255)
+              halo = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+              halo.paste((80, 200, 255, 255), (0, 0), mask)
+              img = Image.alpha_composite(img, halo.filter(ImageFilter.GaussianBlur(48)))
+              grad = Image.new('RGBA', (S, S))
+              gd = ImageDraw.Draw(grad)
+              for x in range(S):
+                  t = x / S
+                  gd.line([(x, 0), (x, S)], fill=(int(110 + 65 * t), int(215 - 85 * t), 255, 255))
+              img.paste(grad, (0, 0), mask)
+              return img
+
+          full = symbol(background(), 0.30)
+          full.resize((512, 512), Image.LANCZOS).save('icon-maskable-512.png')
+          rounded = symbol(background(), 0.38)
+          cut = Image.new('L', (S, S), 0)
+          ImageDraw.Draw(cut).rounded_rectangle([0, 0, S - 1, S - 1], radius=int(S * 0.22), fill=255)
+          rounded.putalpha(cut)
+          rounded.resize((512, 512), Image.LANCZOS).save('icon-512.png')
+          rounded.resize((192, 192), Image.LANCZOS).save('icon-192.png')
+          print('icons ok')
+          EOF
+          cat > patch_android.py <<'EOF'
+          import os
+          from PIL import Image
+          man = 'android/app/src/main/AndroidManifest.xml'
+          s = open(man, encoding='utf-8').read()
+          add = ''.join('    <uses-permission android:name="android.permission.%s" />\n' % p
+                        for p in ['WAKE_LOCK', 'READ_MEDIA_VIDEO'] if 'android.permission.%s"' % p not in s)
+          add += '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n'
+          if add:
+              s = s.replace('<application', add + '    <application', 1)
+          s = s.replace('<activity', '<activity android:supportsPictureInPicture="true"', 1)
+          s = s.replace('<application', '<application android:name=".CrashApp"', 1)
+          open(man, 'w', encoding='utf-8').write(s)
+          print('manifest ok')
+          res = 'android/app/src/main/res'
+          icon = Image.open('icon-512.png').convert('RGBA')
+          fore = Image.open('icon-maskable-512.png').convert('RGBA')
+          sizes = {'mdpi': (48, 108), 'hdpi': (72, 162), 'xhdpi': (96, 216), 'xxhdpi': (144, 324), 'xxxhdpi': (192, 432)}
+          for d, (legacy, adaptive) in sizes.items():
+              folder = os.path.join(res, 'mipmap-' + d)
+              if not os.path.isdir(folder):
+                  continue
+              icon.resize((legacy, legacy), Image.LANCZOS).save(os.path.join(folder, 'ic_launcher.png'))
+              icon.resize((legacy, legacy), Image.LANCZOS).save(os.path.join(folder, 'ic_launcher_round.png'))
+              fore.resize((adaptive, adaptive), Image.LANCZOS).save(os.path.join(folder, 'ic_launcher_foreground.png'))
+          bg = os.path.join(res, 'values', 'ic_launcher_background.xml')
+          if os.path.exists(bg):
+              open(bg, 'w').write('<?xml version="1.0" encoding="utf-8"?>\n<resources>\n'
+                                  '    <color name="ic_launcher_background">#04060C</color>\n</resources>\n')
+          print('icons patched')
+          EOF
+      - name: Install packages
+        run: |
+          npm install || npm install
+          pip install pillow
+          python3 make_icons.py
+      - name: Prepare web files
+        run: |
+          mkdir -p www
+          cp index.html icon-192.png icon-512.png icon-maskable-512.png www/
+      - name: Create Android project
+        run: |
+          npx cap add android
+          npx cap sync android
+      - name: Add picture-in-picture, crash reporter and patch app
+        run: |
+          APPID=$(python3 -c "import json;print(json.load(open('capacitor.config.json'))['appId'])")
+          DIR="android/app/src/main/java/$(echo $APPID | tr . /)"
+          mkdir -p "$DIR"
+          cat > "$DIR/MainActivity.java" <<'EOF'
+          package __PKG__;
+
+          import android.app.PictureInPictureParams;
+          import android.content.ContentResolver;
+          import android.content.ContentUris;
+          import android.content.pm.PackageManager;
+          import android.content.res.Configuration;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.os.Bundle;
+          import android.os.ParcelFileDescriptor;
+          import android.provider.MediaStore;
+          import android.util.Rational;
+          import android.view.View;
+          import android.view.WindowManager;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebResourceResponse;
+          import android.webkit.WebView;
+          import com.getcapacitor.Bridge;
+          import com.getcapacitor.BridgeActivity;
+          import com.getcapacitor.BridgeWebViewClient;
+          import java.io.ByteArrayInputStream;
+          import java.io.FileInputStream;
+          import java.io.IOException;
+          import java.io.InputStream;
+          import java.util.HashMap;
+          import java.util.Map;
+
+          public class MainActivity extends BridgeActivity {
+            public static volatile boolean pipArmed = false;
+            public static volatile int ratio = 178;
+            static final int REQ_VIDEO = 7731;
+
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+              registerPlugin(VibePlugin.class);
+              super.onCreate(savedInstanceState);
+              try {
+                if (Build.VERSION.SDK_INT >= 28) {
+                  WindowManager.LayoutParams lp = getWindow().getAttributes();
+                  lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+                  getWindow().setAttributes(lp);
+                }
+                setBars(false);
+              } catch (Throwable t) {
+              }
+              try {
+                final Bridge b = getBridge();
+                b.setWebViewClient(new BridgeWebViewClient(b) {
+                  @Override
+                  public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                    try {
+                      String p = request.getUrl().getPath();
+                      if (p != null && p.startsWith("/_vibe_/v/")) {
+                        return serveVideo(request, p.substring("/_vibe_/v/".length()));
+                      }
+                    } catch (Throwable t) {
+                    }
+                    return super.shouldInterceptRequest(view, request);
+                  }
+                });
+              } catch (Throwable t) {
+              }
+            }
+
+            /* Plays any video from the phone's media library, with proper seeking (byte ranges). */
+            private WebResourceResponse serveVideo(WebResourceRequest req, String idStr) throws Exception {
+              long id = Long.parseLong(idStr);
+              Uri uri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id);
+              ContentResolver cr = getContentResolver();
+              ParcelFileDescriptor pfd = cr.openFileDescriptor(uri, "r");
+              if (pfd == null) {
+                return new WebResourceResponse("text/plain", "utf-8", 404, "Not Found", new HashMap<String, String>(),
+                    new ByteArrayInputStream(new byte[0]));
+              }
+              long total = pfd.getStatSize();
+              String mime = cr.getType(uri);
+              if (mime == null) {
+                mime = "video/mp4";
+              }
+              String range = null;
+              for (Map.Entry<String, String> e : req.getRequestHeaders().entrySet()) {
+                if ("range".equalsIgnoreCase(e.getKey())) {
+                  range = e.getValue();
+                }
+              }
+              long start = 0;
+              long end = total - 1;
+              boolean partial = false;
+              if (range != null && range.startsWith("bytes=")) {
+                String[] sp = range.substring(6).split("-", 2);
+                try {
+                  if (sp[0].trim().length() > 0) {
+                    start = Long.parseLong(sp[0].trim());
+                    if (sp.length > 1 && sp[1].trim().length() > 0) {
+                      end = Long.parseLong(sp[1].trim());
+                    }
+                  } else if (sp.length > 1 && sp[1].trim().length() > 0) {
+                    start = Math.max(0, total - Long.parseLong(sp[1].trim()));
+                  }
+                  partial = true;
+                } catch (NumberFormatException nfe) {
+                  start = 0;
+                  end = total - 1;
+                  partial = false;
+                }
+              }
+              if (end > total - 1) {
+                end = total - 1;
+              }
+              Map<String, String> h = new HashMap<String, String>();
+              h.put("Accept-Ranges", "bytes");
+              h.put("Access-Control-Allow-Origin", "*");
+              if (start > end || start >= total) {
+                pfd.close();
+                h.put("Content-Range", "bytes */" + total);
+                return new WebResourceResponse(mime, null, 416, "Range Not Satisfiable", h, new ByteArrayInputStream(new byte[0]));
+              }
+              long len = end - start + 1;
+              h.put("Content-Length", String.valueOf(len));
+              if (partial) {
+                h.put("Content-Range", "bytes " + start + "-" + end + "/" + total);
+              }
+              FileInputStream in = new FileInputStream(pfd.getFileDescriptor());
+              in.getChannel().position(start);
+              return new WebResourceResponse(mime, null, partial ? 206 : 200, partial ? "Partial Content" : "OK", h,
+                  new Slice(in, pfd, len));
+            }
+
+            private static class Slice extends InputStream {
+              private final FileInputStream in;
+              private final ParcelFileDescriptor pfd;
+              private long left;
+
+              Slice(FileInputStream in, ParcelFileDescriptor pfd, long left) {
+                this.in = in;
+                this.pfd = pfd;
+                this.left = left;
+              }
+
+              @Override
+              public int read() throws IOException {
+                byte[] one = new byte[1];
+                int n = read(one, 0, 1);
+                return n < 0 ? -1 : (one[0] & 0xff);
+              }
+
+              @Override
+              public int read(byte[] b, int off, int len) throws IOException {
+                if (left <= 0) {
+                  return -1;
+                }
+                int n = in.read(b, off, (int) Math.min((long) len, left));
+                if (n > 0) {
+                  left -= n;
+                }
+                return n;
+              }
+
+              @Override
+              public void close() throws IOException {
+                try {
+                  in.close();
+                } catch (IOException e) {
+                }
+                try {
+                  pfd.close();
+                } catch (IOException e) {
+                }
+              }
+            }
+
+            public String videoPermission() {
+              return Build.VERSION.SDK_INT >= 33 ? "android.permission.READ_MEDIA_VIDEO"
+                  : "android.permission.READ_EXTERNAL_STORAGE";
+            }
+
+            public boolean hasVideoAccess() {
+              if (Build.VERSION.SDK_INT < 23) {
+                return true;
+              }
+              return checkSelfPermission(videoPermission()) == PackageManager.PERMISSION_GRANTED;
+            }
+
+            public void askVideoAccess() {
+              if (Build.VERSION.SDK_INT >= 23) {
+                requestPermissions(new String[] {videoPermission()}, REQ_VIDEO);
+              }
+            }
+
+            @Override
+            public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+              super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+              if (requestCode == REQ_VIDEO) {
+                runJs("window.__vperm&&window.__vperm(" + hasVideoAccess() + ")");
+              }
+            }
+
+            public void runJs(final String js) {
+              try {
+                if (getBridge() != null && getBridge().getWebView() != null) {
+                  final WebView w = getBridge().getWebView();
+                  w.post(new Runnable() {
+                    @Override
+                    public void run() {
+                      w.evaluateJavascript(js, null);
+                    }
+                  });
+                }
+              } catch (Throwable t) {
+              }
+            }
+
+            public void setBars(boolean immersive) {
+              try {
+                View d = getWindow().getDecorView();
+                if (immersive) {
+                  d.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                      | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                      | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+                } else {
+                  getWindow().setStatusBarColor(0xFF04060C);
+                  getWindow().setNavigationBarColor(0xFF04060C);
+                  d.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+                }
+              } catch (Throwable t) {
+              }
+            }
+
+            public void goPip() {
+              if (Build.VERSION.SDK_INT >= 26) {
+                try {
+                  PictureInPictureParams p = new PictureInPictureParams.Builder()
+                      .setAspectRatio(new Rational(ratio, 100)).build();
+                  enterPictureInPictureMode(p);
+                } catch (Throwable t) {
+                }
+              }
+            }
+
+            @Override
+            protected void onUserLeaveHint() {
+              super.onUserLeaveHint();
+              if (pipArmed) {
+                goPip();
+              }
+            }
+
+            @Override
+            public void onPictureInPictureModeChanged(boolean inPip, Configuration cfg) {
+              super.onPictureInPictureModeChanged(inPip, cfg);
+              runJs("window.__pip&&window.__pip(" + inPip + ")");
+            }
+          }
+          EOF
+          cat > "$DIR/VibePlugin.java" <<'EOF'
+          package __PKG__;
+
+          import android.content.ContentResolver;
+          import android.content.ContentUris;
+          import android.content.Intent;
+          import android.content.pm.ActivityInfo;
+          import android.database.Cursor;
+          import android.graphics.Bitmap;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.provider.MediaStore;
+          import android.provider.Settings;
+          import android.util.Base64;
+          import android.util.Size;
+          import android.view.WindowManager;
+          import com.getcapacitor.JSArray;
+          import com.getcapacitor.JSObject;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+          import java.io.ByteArrayOutputStream;
+
+          @CapacitorPlugin(name = "VibeNative")
+          public class VibePlugin extends Plugin {
+            private MainActivity act() {
+              return (MainActivity) getActivity();
+            }
+
+            @PluginMethod
+            public void pipArmed(PluginCall call) {
+              MainActivity.pipArmed = call.getBoolean("on", false);
+              call.resolve();
+            }
+
+            @PluginMethod
+            public void ratio(PluginCall call) {
+              MainActivity.ratio = call.getInt("v", 178);
+              call.resolve();
+            }
+
+            @PluginMethod
+            public void enterPip(PluginCall call) {
+              final MainActivity a = act();
+              a.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                  a.goPip();
+                }
+              });
+              call.resolve();
+            }
+
+            @PluginMethod
+            public void keepOn(PluginCall call) {
+              final boolean on = call.getBoolean("on", false);
+              final MainActivity a = act();
+              a.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                  if (on) {
+                    a.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                  } else {
+                    a.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                  }
+                }
+              });
+              call.resolve();
+            }
+
+            @PluginMethod
+            public void immersive(PluginCall call) {
+              final boolean on = call.getBoolean("on", false);
+              final MainActivity a = act();
+              a.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                  a.setBars(on);
+                }
+              });
+              call.resolve();
+            }
+
+            @PluginMethod
+            public void landscape(PluginCall call) {
+              final boolean on = call.getBoolean("on", false);
+              final MainActivity a = act();
+              a.runOnUiThread(new Runnable() {
+                @Ov
