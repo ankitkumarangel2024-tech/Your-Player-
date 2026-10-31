@@ -489,19 +489,6 @@ jobs:
               a.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                  a.setBars(on);
-                }
-              });
-              call.resolve();
-            }
-
-            @PluginMethod
-            public void landscape(PluginCall call) {
-              final boolean on = call.getBoolean("on", false);
-              final MainActivity a = act();
-              a.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
                   a.setRequestedOrientation(on ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
                       : ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 }
