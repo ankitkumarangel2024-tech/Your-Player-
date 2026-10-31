@@ -487,4 +487,178 @@ jobs:
               final boolean on = call.getBoolean("on", false);
               final MainActivity a = act();
               a.runOnUiThread(new Runnable() {
-                @Ov
+                @Override
+                public void run() {
+                  a.setBars(on);
+                }
+              });
+              call.resolve();
+            }
+
+            @PluginMethod
+            public void landscape(PluginCall call) {
+              final boolean on = call.getBoolean("on", false);
+              final MainActivity a = act();
+              a.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                  a.setRequestedOrientation(on ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                      : ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                }
+              });
+              call.resolve();
+            }
+
+            /* all videos on the phone, newest first */
+            @PluginMethod
+            public void scan(PluginCall call) {
+              final MainActivity a = act();
+              JSObject res = new JSObject();
+              if (!a.hasVideoAccess()) {
+                a.runOnUiThread(new Runnable() {
+                  @Override
+                  public void run() {
+                    a.askVideoAccess();
+                  }
+                });
+                res.put("ok", false);
+                res.put("asked", true);
+                call.resolve(res);
+                return;
+              }
+              JSArray list = new JSArray();
+              Cursor c = null;
+              try {
+                String[] proj = {
+                    MediaStore.Video.Media._ID,
+                    MediaStore.Video.Media.DISPLAY_NAME,
+                    MediaStore.Video.Media.SIZE,
+                    MediaStore.Video.Media.DURATION
+                };
+                c = getContext().getContentResolver().query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, proj, null, null,
+                    MediaStore.Video.Media.DATE_ADDED + " DESC");
+                if (c != null) {
+                  while (c.moveToNext()) {
+                    JSObject o = new JSObject();
+                    o.put("id", c.getLong(0));
+                    o.put("name", c.getString(1));
+                    o.put("size", c.getLong(2));
+                    o.put("dur", c.getLong(3));
+                    list.put(o);
+                  }
+                }
+              } catch (Throwable t) {
+                call.reject("scan failed");
+                return;
+              } finally {
+                if (c != null) {
+                  c.close();
+                }
+              }
+              res.put("ok", true);
+              res.put("list", list);
+              call.resolve(res);
+            }
+
+            /* small preview picture of one video, as a data address */
+            @PluginMethod
+            public void thumb(PluginCall call) {
+              Long id = call.getLong("id");
+              if (id == null) {
+                call.reject("id");
+                return;
+              }
+              ContentResolver cr = getContext().getContentResolver();
+              Uri uri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id);
+              Bitmap bm = null;
+              try {
+                if (Build.VERSION.SDK_INT >= 29) {
+                  bm = cr.loadThumbnail(uri, new Size(320, 180), null);
+                } else {
+                  bm = MediaStore.Video.Thumbnails.getThumbnail(cr, id, MediaStore.Video.Thumbnails.MINI_KIND, null);
+                }
+              } catch (Throwable t) {
+              }
+              if (bm == null) {
+                call.reject("no thumb");
+                return;
+              }
+              ByteArrayOutputStream bo = new ByteArrayOutputStream();
+              bm.compress(Bitmap.CompressFormat.JPEG, 72, bo);
+              JSObject res = new JSObject();
+              res.put("data", "data:image/jpeg;base64," + Base64.encodeToString(bo.toByteArray(), Base64.NO_WRAP));
+              call.resolve(res);
+            }
+
+            @PluginMethod
+            public void settings(PluginCall call) {
+              try {
+                Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:" + getContext().getPackageName()));
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getActivity().startActivity(i);
+              } catch (Throwable t) {
+              }
+              call.resolve();
+            }
+          }
+          EOF
+          cat > "$DIR/CrashApp.java" <<'EOF'
+          package __PKG__;
+
+          import android.app.Application;
+          import android.content.ContentValues;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.provider.MediaStore;
+          import java.io.OutputStream;
+          import java.io.PrintWriter;
+          import java.io.StringWriter;
+
+          public class CrashApp extends Application {
+            @Override
+            public void onCreate() {
+              super.onCreate();
+              final Thread.UncaughtExceptionHandler prev = Thread.getDefaultUncaughtExceptionHandler();
+              Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+                @Override
+                public void uncaughtException(Thread t, Throwable e) {
+                  try {
+                    StringWriter sw = new StringWriter();
+                    e.printStackTrace(new PrintWriter(sw));
+                    String text = "Your Player crash\nAndroid " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ") "
+                        + Build.MANUFACTURER + " " + Build.MODEL + "\nthread: " + t.getName() + "\n\n" + sw.toString();
+                    if (Build.VERSION.SDK_INT >= 29) {
+                      ContentValues v = new ContentValues();
+                      v.put(MediaStore.MediaColumns.DISPLAY_NAME, "vibeplayer-crash-" + System.currentTimeMillis() + ".txt");
+                      v.put(MediaStore.MediaColumns.MIME_TYPE, "text/plain");
+                      v.put(MediaStore.MediaColumns.RELATIVE_PATH, "Download");
+                      Uri u = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
+                      if (u != null) {
+                        OutputStream o = getContentResolver().openOutputStream(u);
+                        o.write(text.getBytes("UTF-8"));
+                        o.close();
+                      }
+                    }
+                  } catch (Throwable x) {
+                  }
+                  if (prev != null) {
+                    prev.uncaughtException(t, e);
+                  }
+                }
+              });
+            }
+          }
+          EOF
+          sed -i "s/__PKG__/$APPID/" "$DIR/MainActivity.java" "$DIR/VibePlugin.java" "$DIR/CrashApp.java"
+          python3 patch_android.py
+          cat android/app/src/main/AndroidManifest.xml | head -30
+      - name: Build APK
+        working-directory: android
+        run: ./gradlew assembleDebug || ./gradlew assembleDebug || ./gradlew assembleDebug
+      - name: Publish APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Your Player build ${{ github.run_number }}
+          files: android/app/build/outputs/apk/debug/app-debug.apk
