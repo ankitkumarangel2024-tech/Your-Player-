@@ -396,6 +396,7 @@ public class VibePlugin extends Plugin {
           hd.removeCallbacks(tick);
           ticking = false;
           if (pl != null) {
+            pl.setPlayWhenReady(false);
             pl.stop();
             pl.clearMediaItems();
           }

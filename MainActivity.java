@@ -40,6 +40,9 @@ public class MainActivity extends BridgeActivity {
       @Override
       public void handleOnBackPressed() {
         if (playerOpen) {
+          if (VibePlugin.inst != null) {
+            VibePlugin.inst.pausePlayer();
+          }
           runJs("window.__back&&window.__back()");
         } else {
           setEnabled(false);
@@ -123,6 +126,22 @@ public class MainActivity extends BridgeActivity {
   public void onResume() {
     super.onResume();
     fg = true;
+  }
+
+  @Override
+  protected void onUserLeaveHint() {
+    super.onUserLeaveHint();
+    if (VibePlugin.inst != null) {
+      VibePlugin.inst.pausePlayer();
+    }
+  }
+
+  @Override
+  public void onPause() {
+    if (VibePlugin.inst != null) {
+      VibePlugin.inst.pausePlayer();
+    }
+    super.onPause();
   }
 
   @Override
