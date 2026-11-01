@@ -19,6 +19,8 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%}
+html.playing,html.playing body{background:transparent}
+html.playing #home,html.playing .orbs{visibility:hidden}
 body{margin:0;background:var(--ink);color:var(--text);font:500 15px/1.45 var(--font-body);overflow:hidden;
   -webkit-tap-highlight-color:transparent;overscroll-behavior:none;touch-action:manipulation;
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -96,9 +98,8 @@ svg{display:block}
 .note{margin:16px 6px 0;color:var(--muted);font-size:12px;font-weight:600;text-align:center;opacity:.8}
 
 /* ---------- player ---------- */
-#pl{position:fixed;inset:0;z-index:50;background:#000;visibility:hidden;touch-action:none}
+#pl{position:fixed;inset:0;z-index:50;background:transparent;visibility:hidden;touch-action:none}
 #pl.open{visibility:visible}
-#v{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
 #dim{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
 #g{position:absolute;inset:0;touch-action:none}
 .hint{position:absolute;top:0;bottom:0;width:34%;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0}
@@ -106,10 +107,11 @@ svg{display:block}
 .hint div{padding:12px 18px;border-radius:99px;font-weight:800;font-size:15px;display:flex;gap:8px;align-items:center}
 .hint.show{animation:hint .6s ease-out}
 @keyframes hint{0%{opacity:0;transform:scale(.8)}25%{opacity:1;transform:scale(1)}100%{opacity:0}}
-#hud{position:absolute;left:50%;top:22%;transform:translateX(-50%);min-width:150px;padding:12px 20px;border-radius:26px;display:flex;flex-direction:column;align-items:center;gap:8px;
+#hud{position:absolute;left:50%;top:18%;transform:translateX(-50%);min-width:96px;padding:8px 14px;border-radius:20px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;
   font-weight:800;font-variant-numeric:tabular-nums;opacity:0;pointer-events:none;transition:opacity .25s}
 #hud.show{opacity:1}
-#hud .lv{width:120px;height:4px;border-radius:9px;background:rgba(255,255,255,.22);overflow:hidden}
+#hud svg{width:15px;height:15px}
+#hud .lv{width:84px;height:3px;border-radius:9px;background:rgba(255,255,255,.22);overflow:hidden}
 #hud .lv i{display:block;height:100%;width:50%;border-radius:inherit;background:linear-gradient(90deg,var(--glow),var(--glow2));box-shadow:0 0 10px var(--glow)}
 #boost{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 70px);transform:translateX(-50%);padding:9px 18px;border-radius:99px;font:800 14px/1 var(--font-body);
   display:none;align-items:center;gap:8px;color:var(--glow)}
@@ -144,6 +146,33 @@ svg{display:block}
 .toast{position:fixed;z-index:80;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);padding:10px 18px;border-radius:99px;font-weight:700;font-size:14px;max-width:calc(100vw - 40px);text-align:center;opacity:0;pointer-events:none;transition:opacity .25s}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* tabs */
+.tabs{display:flex;gap:8px;margin:0 0 12px}
+.tabs button{flex:1;height:40px;border-radius:99px;border:1px solid var(--edge);background:rgba(255,255,255,.06);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;color:var(--muted);cursor:pointer}
+.tabs button svg{width:16px;height:16px}
+.tabs button.on{color:var(--text);background:linear-gradient(140deg,rgba(255,255,255,.2),rgba(255,255,255,.05));box-shadow:inset 1.5px 1.5px 0 rgba(255,255,255,.4),0 0 18px -6px var(--glow)}
+.fd .th{display:grid;place-items:center;aspect-ratio:auto;width:64px;height:64px;border-radius:18px}
+.fd .th svg{position:static;margin:0;width:28px;height:28px}
+.crumb{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-weight:800}
+.crumb .btn{width:40px;height:40px}
+.pg{height:3px;margin-top:7px;border-radius:9px;background:rgba(255,255,255,.16);overflow:hidden}
+.pg i{display:block;height:100%;background:linear-gradient(90deg,var(--glow),var(--glow2))}
+/* sheet + lock */
+#sheet{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 112px);width:min(300px,80vw);max-height:60vh;overflow:auto;padding:8px;border-radius:24px;display:none;flex-direction:column;gap:4px}
+#sheet.show{display:flex}
+#pl.ui #sheet{pointer-events:auto}
+#sheet h4{margin:6px 10px 4px;font:700 12px/1 var(--font-display);color:var(--muted)}
+#sheet button{min-height:42px;border:0;border-radius:16px;background:rgba(255,255,255,.07);padding:0 14px;text-align:left;font-weight:700;font-size:14px;cursor:pointer;color:var(--text)}
+#sheet button.on{background:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px var(--glow)}
+#sheet p{margin:8px 10px;color:var(--muted);font-size:13px}
+.chip svg{width:18px;height:18px}
+#lk{position:absolute;inset:0;display:none;z-index:9}
+#pl.lock #lk{display:block}
+#pl.lock #ctl,#pl.lock #g,#pl.lock .hint,#pl.lock #hud{display:none}
+#ulk{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:0 22px;height:54px;border-radius:99px;display:flex;align-items:center;gap:10px;font-weight:800;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s;border:0;color:var(--text)}
+#ulk.show{opacity:1;pointer-events:auto}
+#ulk svg{width:20px;height:20px}
 </style>
 </head>
 <body>
@@ -160,6 +189,12 @@ svg{display:block}
   <symbol id="i-fwd" viewBox="0 0 24 24"><path class="f" d="M4 6v12l8-6zM12 6v12l8-6z"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle class="s" cx="12" cy="12" r="4"/><path class="s" d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></symbol>
   <symbol id="i-vol" viewBox="0 0 24 24"><path class="f" d="M4 9.5v5h3.6l4.6 3.8V5.7L7.6 9.5z"/><path class="s" d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect class="s" x="5" y="11" width="14" height="9" rx="2.5"/><path class="s" d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-cc" viewBox="0 0 24 24"><rect class="s" x="3" y="5" width="18" height="14" rx="3.5"/><path class="s" d="M10.4 10.2a2.4 2.4 0 1 0 0 3.6M17 10.2a2.4 2.4 0 1 0 0 3.6"/></symbol>
+  <symbol id="i-audio" viewBox="0 0 24 24"><path class="s" d="M9 18V6l10-2v12"/><circle class="s" cx="6.5" cy="18" r="2.5"/><circle class="s" cx="16.5" cy="16" r="2.5"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path class="s" d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle class="s" cx="12" cy="12" r="8.5"/><path class="s" d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path class="s" d="M5 7h14M5 12h14M5 17h14"/></symbol>
   <symbol id="i-seek" viewBox="0 0 24 24"><path class="s" d="M4 12h16M13 6l7 6-7 6"/></symbol>
 </svg>
 
@@ -171,8 +206,12 @@ svg{display:block}
       <h1 class="logo"><span>Your</span> Player</h1>
       <p id="sub">Apni videos, liquid glass mein</p>
     </div>
-    <label class="add" id="addbtn"><svg><use href="#i-plus"/></svg>Add videos<input id="pick" type="file" accept="video/*" multiple hidden></label>
   </div>
+  <nav class="tabs" id="tabs">
+    <button data-t="all" class="on"><svg><use href="#i-list"/></svg>Sab</button>
+    <button data-t="folders"><svg><use href="#i-folder"/></svg>Folders</button>
+    <button data-t="hist"><svg><use href="#i-clock"/></svg>History</button>
+  </nav>
   <div id="scroll">
     <section id="perm" class="perm glass" hidden>
       <p>Videos dikhane ke liye app ko videos ki permission chahiye.</p>
@@ -184,8 +223,6 @@ svg{display:block}
 </main>
 
 <section id="pl" aria-label="Player">
-  <video id="v" playsinline webkit-playsinline preload="auto"></video>
-  <div id="dim"></div>
   <div id="g"></div>
   <div class="hint l"><div class="glass"><svg width="20" height="20" style="transform:scaleX(-1)"><use href="#i-fwd"/></svg>10 sec</div></div>
   <div class="hint r"><div class="glass">10 sec<svg width="20" height="20"><use href="#i-fwd"/></svg></div></div>
@@ -195,6 +232,7 @@ svg{display:block}
     <div id="tb" class="bar">
       <button class="btn glass" id="bk" aria-label="Back"><svg><use href="#i-back"/></svg></button>
       <h2 id="ttl"></h2>
+      <button class="btn glass" id="blk" aria-label="Lock"><svg><use href="#i-lock"/></svg></button>
       <button class="btn glass" id="bpip" aria-label="Picture in picture"><svg><use href="#i-pip"/></svg></button>
       <button class="btn glass" id="brot" aria-label="Rotate"><svg><use href="#i-rot"/></svg></button>
     </div>
@@ -209,10 +247,12 @@ svg{display:block}
         <div id="sk"><div class="tr"></div><div class="fl"></div><div class="bd"></div></div>
         <span class="tm r" id="td">0:00</span>
       </div>
-      <div id="row2"><button class="chip glass" id="bspd">1×</button></div>
+      <div id="row2"><button class="chip glass" id="bcc"><svg><use href="#i-cc"/></svg>CC</button><button class="chip glass" id="baud"><svg><use href="#i-audio"/></svg>Audio</button><button class="chip glass" id="bspd">1×</button></div>
     </div>
     <div id="spd" class="glass"></div>
+    <div id="sheet" class="glass"></div>
   </div>
+<div id="lk"><button id="ulk" class="glass"><svg><use href="#i-lock"/></svg>Unlock: dabake rakho</button></div>
 </section>
 <div class="toast glass" id="toast"></div>
 
@@ -222,7 +262,7 @@ svg{display:block}
 const $ = s => document.querySelector(s);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const items = [];
-let cur = -1, rate = 1, bright = 1, inPip = false, land = false, uiTimer = 0, uid = 0;
+let cur = -1, rate = 1, bright = .6, inPip = false, land = false, uiTimer = 0, uid = 0, locked = false, queue = [], qpos = -1, trk = { a: [], s: [] };
 
 /* ---- bridge to the native side (picture-in-picture, keep screen on, rotate) ---- */
 const call = (m, o) => {
@@ -235,7 +275,26 @@ const call = (m, o) => {
 const nat = (m, o) => { call(m, o).catch(() => {}); };
 const hasNative = () => !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.VibeNative);
 
-const v = $('#v'), pl = $('#pl');
+const pl = $('#pl');
+/* the real player lives in native code; this object mimics a video element for the UI */
+let seekAt = 0, volAt = 0, volSend = 0;
+const v = {
+  paused: true, duration: 0, videoWidth: 0, videoHeight: 0, _t: 0, _vol: .5, _rate: 1, _l: {}, _meta: false, _ended: false, _err: '',
+  addEventListener(t, f) { (this._l[t] = this._l[t] || []).push(f); },
+  emit(t) { (this._l[t] || []).forEach(f => f()); },
+  play() { if (this.paused) { this.paused = false; nat('playing', { on: true }); this.emit('play'); } return Promise.resolve(); },
+  pause() { if (!this.paused) { this.paused = true; nat('playing', { on: false }); this.emit('pause'); } },
+  get currentTime() { return this._t; },
+  set currentTime(x) { this._t = Math.max(0, x); seekAt = performance.now(); nat('seek', { ms: Math.round(this._t * 1000) }); this.emit('timeupdate'); },
+  get playbackRate() { return this._rate; },
+  set playbackRate(x) { this._rate = x; nat('rate', { v: x }); },
+  get volume() { return this._vol; },
+  set volume(x) {
+    this._vol = x; volAt = performance.now();
+    if (volAt - volSend > 40) { volSend = volAt; nat('vol', { v: x }); }
+  },
+  reset() { this._t = 0; this.duration = 0; this.videoWidth = 0; this.videoHeight = 0; this._meta = false; this._ended = false; this._err = ''; this.paused = false; }
+};
 const fmt = s => {
   if (!isFinite(s) || s < 0) s = 0;
   s = Math.floor(s);
@@ -256,6 +315,26 @@ document.addEventListener('pointerdown', e => {
 }, true);
 
 /* ---------------- library ---------------- */
+let hist = {};
+try { hist = JSON.parse(localStorage.getItem('yp_hist') || '{}') || {}; } catch (e) { hist = {}; }
+let histSave = 0;
+function saveHist(force) {
+  const now = Date.now();
+  if (!force && now - histSave < 5000) return;
+  histSave = now;
+  try {
+    const ks = Object.keys(hist);
+    if (ks.length > 80) ks.sort((a, b) => hist[a].t - hist[b].t).slice(0, ks.length - 80).forEach(k => delete hist[k]);
+    localStorage.setItem('yp_hist', JSON.stringify(hist));
+  } catch (e) {}
+}
+function remember() {
+  if (cur < 0 || !items[cur] || !v.duration) return;
+  const p = Math.round(v._t * 1000), d = Math.round(v.duration * 1000);
+  if (p < 3000) return;
+  hist[items[cur].vid] = (p > d - 8000) ? { p: 0, d, t: Date.now(), done: 1 } : { p, d, t: Date.now() };
+}
+let tab = 'all', folder = null;
 function hue(name) { let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
 const io = ('IntersectionObserver' in window) ? new IntersectionObserver(es => {
   for (const e of es) if (e.isIntersecting) { io.unobserve(e.target); loadThumb(e.target); }
@@ -268,28 +347,58 @@ function paintThumb(el, it) {
 }
 function loadThumb(el) {
   const it = el._it;
-  if (!it || it.thumb || it.src !== 'scan') return;
+  if (!it || it.thumb) return;
   call('thumb', { id: it.vid }).then(r => { it.thumb = r.data; paintThumb(el, it); }).catch(() => {});
+}
+function rowFor(it, q) {
+  const li = document.createElement('li'); li.className = 'rw glass';
+  const hs = hist[it.vid], pct = hs && hs.d && hs.p ? Math.min(100, Math.round(hs.p / hs.d * 100)) : 0;
+  li.innerHTML = '<button class="rm"><div class="th" style="--t:' + hue(it.name) + '">' + use('play') +
+    '<em>' + (it.dur ? fmt(it.dur) : '') + '</em></div>' +
+    '<div class="rt"><b></b><span>' + size(it.size) + (pct ? ' · ' + pct + '% dekha' : '') + '</span>' +
+    (pct ? '<div class="pg"><i style="width:' + pct + '%"></i></div>' : '') + '</div></button>';
+  li.querySelector('b').textContent = it.name;
+  li.querySelector('.rm').onclick = () => start(items.indexOf(it), q);
+  const th = li.querySelector('.th'); th._it = it;
+  if (it.thumb) paintThumb(th, it); else if (io) io.observe(th); else loadThumb(th);
+  return li;
 }
 function renderList() {
   const ul = $('#list'); ul.textContent = '';
-  $('#none').hidden = items.length > 0 || !hasNative() || !$('#perm').hidden;
-  $('#sub').textContent = items.length ? items.length + (items.length === 1 ? ' video' : ' videos') : 'Apni videos, liquid glass mein';
   const frag = document.createDocumentFragment();
-  items.forEach((it, i) => {
-    const li = document.createElement('li'); li.className = 'rw glass';
-    li.innerHTML = '<button class="rm"><div class="th" style="--t:' + hue(it.name) + '">' + use('play') +
-      '<em>' + (it.dur ? fmt(it.dur) : '') + '</em></div>' +
-      '<div class="rt"><b></b><span>' + size(it.size) + '</span></div></button>';
-    li.querySelector('b').textContent = it.name;
-    li.querySelector('.rm').onclick = () => start(i);
-    const th = li.querySelector('.th'); th._it = it;
-    if (it.thumb) paintThumb(th, it);
-    else if (it.src === 'scan') { if (io) io.observe(th); else loadThumb(th); }
-    frag.appendChild(li);
-  });
+  let shown = 0;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
+  if (tab === 'folders' && !folder) {
+    const m = new Map();
+    items.forEach(it => { const f = it.folder; if (!m.has(f)) m.set(f, []); m.get(f).push(it); });
+    [...m.entries()].sort((a, b) => a[0].localeCompare(b[0])).forEach(([name, arr]) => {
+      const li = document.createElement('li'); li.className = 'rw glass fd';
+      li.innerHTML = '<button class="rm"><div class="th" style="--t:' + hue(name) + '">' + use('folder') + '</div><div class="rt"><b></b><span>' + arr.length + (arr.length === 1 ? ' video' : ' videos') + '</span></div></button>';
+      li.querySelector('b').textContent = name;
+      li.querySelector('.rm').onclick = () => { folder = name; renderList(); $('#scroll').scrollTop = 0; };
+      frag.appendChild(li); shown++;
+    });
+  } else {
+    let arr;
+    if (tab === 'hist') arr = items.filter(it => hist[it.vid]).sort((a, b) => hist[b.vid].t - hist[a.vid].t);
+    else if (tab === 'folders') arr = items.filter(it => it.folder === folder);
+    else arr = items;
+    if (tab === 'folders') {
+      const li = document.createElement('li'); li.className = 'crumb';
+      li.innerHTML = '<button class="btn glass">' + use('back') + '</button><span></span>';
+      li.querySelector('span').textContent = folder;
+      li.querySelector('button').onclick = () => { folder = null; renderList(); };
+      frag.appendChild(li);
+    }
+    const q = arr.map(it => items.indexOf(it));
+    arr.forEach(it => { frag.appendChild(rowFor(it, q)); shown++; });
+  }
   ul.appendChild(frag);
+  $('#none').textContent = tab === 'hist' ? 'Abhi tak kuch nahi dekha' : 'Koi video nahi mili';
+  $('#none').hidden = shown > 0 || !hasNative() || !$('#perm').hidden;
+  $('#sub').textContent = items.length ? items.length + (items.length === 1 ? ' video' : ' videos') : 'Apni videos, liquid glass mein';
 }
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; folder = null; renderList(); $('#scroll').scrollTop = 0; });
 
 /* every video on the phone (app only) */
 let scanning = false;
@@ -300,13 +409,12 @@ function scanLib() {
     scanning = false;
     if (!r.ok) { $('#perm').hidden = !!r.asked; renderList(); return; }
     $('#perm').hidden = true;
-    const old = new Map(items.filter(i => i.src === 'scan').map(i => [i.vid, i]));
-    const picked = items.filter(i => i.src === 'pick');
+    const old = new Map(items.map(i => [i.vid, i]));
     const scanned = (r.list || []).map(o => old.get(o.id) || {
-      id: ++uid, vid: o.id, src: 'scan', name: (o.name || 'Video').replace(/\.[^.]+$/, ''),
-      size: o.size || 0, dur: (o.dur || 0) / 1000, thumb: '', url: location.origin + '/_vibe_/v/' + o.id
+      id: ++uid, vid: o.id, name: (o.name || 'Video').replace(/\.[^.]+$/, ''), folder: o.folder || 'Other',
+      size: o.size || 0, dur: (o.dur || 0) / 1000, thumb: ''
     });
-    items.length = 0; items.push(...picked, ...scanned); cur = -1;
+    items.length = 0; items.push(...scanned); cur = -1;
     renderList();
   }).catch(() => { scanning = false; });
 }
@@ -314,79 +422,58 @@ window.__vperm = ok => { if (ok) scanLib(); else { $('#perm').hidden = false; re
 $('#permbtn').onclick = () => { call('settings').catch(() => {}); };
 document.addEventListener('visibilitychange', () => { if (!document.hidden) scanLib(); });
 
-/* videos added by hand (browser, or if scanning is not available) */
-const metaQ = []; let metaBusy = false;
-function nextMeta() {
-  if (metaBusy || !metaQ.length) return;
-  metaBusy = true;
-  const it = metaQ.shift(), t = document.createElement('video');
-  let done = false;
-  const fin = () => {
-    if (done) return; done = true;
-    t.removeAttribute('src'); t.load();
-    metaBusy = false; renderList(); nextMeta();
-  };
-  t.muted = true; t.preload = 'metadata'; t.playsInline = true;
-  t.onloadedmetadata = () => { it.dur = t.duration; try { t.currentTime = Math.min(2, (t.duration || 2) * 0.15); } catch (e) { fin(); } };
-  t.onseeked = () => {
-    try {
-      const c = document.createElement('canvas'); c.width = 240; c.height = 135;
-      const x = c.getContext('2d'); x.drawImage(t, 0, 0, 240, 135);
-      it.thumb = c.toDataURL('image/jpeg', .6);
-    } catch (e) {}
-    fin();
-  };
-  t.onerror = fin;
-  setTimeout(fin, 5000);
-  t.src = it.url;
-}
-$('#pick').addEventListener('change', e => {
-  const files = Array.from(e.target.files || []);
-  for (const f of files) {
-    if (items.some(x => x.src === 'pick' && x.name === f.name.replace(/\.[^.]+$/, '') && x.size === f.size)) continue;
-    const it = { id: ++uid, src: 'pick', name: f.name.replace(/\.[^.]+$/, ''), size: f.size, url: URL.createObjectURL(f), dur: 0, thumb: '' };
-    items.unshift(it); metaQ.push(it);
-  }
-  e.target.value = '';
-  renderList(); nextMeta();
-});
-
 /* ---------------- player ---------------- */
-function start(i) {
+function start(i, q) {
   if (i < 0 || i >= items.length) return;
-  const first = !pl.classList.contains('open');
+  const it = items[i];
+  if (q) { queue = q; }
+  else if (!queue.includes(i)) queue = [i];
+  qpos = queue.indexOf(i);
+  if (cur >= 0 && pl.classList.contains('open')) { remember(); }
   cur = i;
-  $('#ttl').textContent = items[i].name;
-  v.src = items[i].url;
-  v.playbackRate = rate;
-  const p = v.play(); if (p && p.catch) p.catch(() => {});
+  const hs = hist[it.vid], pos = hs && hs.p > 5000 && hs.d && hs.p < hs.d - 10000 ? hs.p : 0;
+  $('#ttl').textContent = it.name;
+  v.reset(); v._t = pos / 1000; trk = { a: [], s: [] }; refreshChips();
   pl.classList.add('open');
-  if (first) { try { history.pushState({ p: 1 }, ''); } catch (e) {} }
-  nat('keepOn', { on: true }); nat('immersive', { on: true });
-  showUI(true);
+  document.documentElement.classList.add('playing');
+  rate = 1; markSpeed(); v._rate = 1;
+  call('open', { id: it.vid, pos }).then(r => {
+    if (r && r.vol != null) v._vol = r.vol;
+    if (r && r.br != null) bright = clamp(r.br, .05, 1);
+    if (pos) toast('Wahin se shuru: ' + fmt(pos / 1000));
+  }).catch(() => { toast('Video khul nahi payi'); });
+  nat('playerOpen', { on: true }); nat('keepOn', { on: true }); nat('immersive', { on: true });
+  syncPlay(); showUI(true);
 }
-function stop(fromPop) {
+function stop() {
   if (!pl.classList.contains('open')) return;
-  pl.classList.remove('open', 'ui', 'pip');
-  v.pause(); v.removeAttribute('src'); v.load();
-  $('#spd').classList.remove('show');
+  remember(); saveHist(true);
+  pl.classList.remove('open', 'ui', 'pip', 'lock');
+  document.documentElement.classList.remove('playing');
+  locked = false;
+  v.paused = true; nat('close');
+  $('#spd').classList.remove('show'); $('#sheet').classList.remove('show');
   inPip = false; land = false;
-  nat('pipArmed', { on: false }); nat('keepOn', { on: false }); nat('immersive', { on: false }); nat('landscape', { on: false });
-  if (!fromPop) { try { if (history.state && history.state.p) history.back(); } catch (e) {} }
+  nat('playerOpen', { on: false }); nat('pipArmed', { on: false }); nat('keepOn', { on: false }); nat('immersive', { on: false }); nat('landscape', { on: false });
+  renderList();
 }
-window.addEventListener('popstate', () => stop(true));
-$('#bk').onclick = () => stop(false);
+window.__back = () => {
+  if (locked) { toast('Locked hai — unlock karne ke liye lock dabake rakho'); showUnlock(); return; }
+  if ($('#sheet').classList.contains('show')) { $('#sheet').classList.remove('show'); return; }
+  stop();
+};
+$('#bk').onclick = () => stop();
 
 function go(d) {
-  const n = cur + d;
-  if (n >= 0 && n < items.length) start(n); else if (d > 0) { v.pause(); showUI(true); }
+  const n = qpos + d;
+  if (n >= 0 && n < queue.length) start(queue[n]); else if (d > 0) { v.pause(); showUI(true); }
 }
-$('#bprev').onclick = () => { if (v.currentTime > 4 || cur === 0) v.currentTime = 0; else go(-1); showUI(true); };
+$('#bprev').onclick = () => { if (v.currentTime > 4 || qpos <= 0) v.currentTime = 0; else go(-1); showUI(true); };
 $('#bnext').onclick = () => go(1);
-function toggle() { if (v.paused) { const p = v.play(); if (p && p.catch) p.catch(() => {}); } else v.pause(); }
+function toggle() { if (v.paused) v.play(); else v.pause(); }
 $('#bplay').onclick = () => { toggle(); showUI(true); };
-v.addEventListener('ended', () => go(1));
-v.addEventListener('error', () => { if (v.getAttribute('src')) { toast('Ye video is phone par nahi chal rahi'); showUI(true); } });
+v.addEventListener('timeupdate', () => { remember(); saveHist(false); });
+v.addEventListener('ended', () => { remember(); saveHist(true); go(1); });
 v.addEventListener('play', syncPlay); v.addEventListener('pause', syncPlay);
 function syncPlay() {
   $('#bplay').innerHTML = use(v.paused ? 'play' : 'pause');
@@ -409,7 +496,7 @@ function showUI() {
   clearTimeout(uiTimer);
   if (!v.paused) uiTimer = setTimeout(hideUI, 3500);
 }
-function hideUI() { if (!dragging) { pl.classList.remove('ui'); $('#spd').classList.remove('show'); } }
+function hideUI() { if (!dragging) { pl.classList.remove('ui'); $('#spd').classList.remove('show'); $('#sheet').classList.remove('show'); } }
 
 /* seek bar */
 const sk = $('#sk'); let dragging = false, raf = 0;
@@ -458,6 +545,60 @@ $('#spd').addEventListener('click', e => {
 });
 markSpeed();
 
+/* native player -> page */
+window.__ps = o => {
+  if (!pl.classList.contains('open')) return;
+  const was = v.paused, n = performance.now();
+  if (o.d > 0) v.duration = o.d / 1000;
+  if (n - seekAt > 700) v._t = o.p / 1000;
+  v.paused = !o.pl;
+  if (o.w && (o.w !== v.videoWidth || o.h !== v.videoHeight)) { v.videoWidth = o.w; v.videoHeight = o.h; v._meta = true; v.emit('loadedmetadata'); }
+  else if (!v._meta && o.d > 0) { v._meta = true; v.emit('loadedmetadata'); }
+  if (v.paused !== was) v.emit(v.paused ? 'pause' : 'play');
+  if (n - volAt > 1500 && o.vl != null) v._vol = o.vl;
+  if (o.st === 4) { if (!v._ended) { v._ended = true; v.emit('ended'); } } else v._ended = false;
+  if (o.e && o.e !== v._err) { v._err = o.e; toast('Ye video nahi chal payi (' + String(o.e).replace('ERROR_CODE_', '') + ')'); showUI(true); }
+  v.emit('timeupdate');
+};
+window.__tr = o => { trk = o || { a: [], s: [] }; refreshChips(); if ($('#sheet').classList.contains('show')) drawSheet(); };
+function refreshChips() { $('#bcc').classList.toggle('on', trk.s.some(t => t.sel)); }
+
+/* subtitles + audio tracks */
+let sheetKind = '';
+function drawSheet() {
+  const sh = $('#sheet'); sh.textContent = '';
+  const add = (txt, on, fn) => { const b = document.createElement('button'); b.textContent = txt; if (on) b.className = 'on'; b.onclick = fn; sh.appendChild(b); };
+  const head = t => { const e = document.createElement('h4'); e.textContent = t; sh.appendChild(e); };
+  if (sheetKind === 'sub') {
+    head('SUBTITLES');
+    add('Off', !trk.s.some(t => t.sel), () => { call('pickText', { g: -1 }); sh.classList.remove('show'); });
+    trk.s.forEach(t => add(t.n, t.sel, () => { call('pickText', { g: t.g, t: t.t }); sh.classList.remove('show'); }));
+    add('+ Subtitle file chuno (.srt .vtt .ass)', false, () => { sh.classList.remove('show'); call('addSub').then(() => toast('Subtitle laga di')).catch(() => {}); });
+  } else {
+    head('AUDIO TRACK');
+    if (!trk.a.length) { const p = document.createElement('p'); p.textContent = 'Is video mein sirf ek audio track hai'; sh.appendChild(p); }
+    trk.a.forEach(t => add(t.n, t.sel, () => { call('pickAudio', { g: t.g, t: t.t }); sh.classList.remove('show'); }));
+  }
+}
+function openSheet(k) {
+  const sh = $('#sheet');
+  if (sh.classList.contains('show') && sheetKind === k) { sh.classList.remove('show'); showUI(); return; }
+  sheetKind = k; $('#spd').classList.remove('show'); drawSheet(); sh.classList.add('show'); clearTimeout(uiTimer);
+  nat('tracks');
+}
+$('#bcc').onclick = () => openSheet('sub');
+$('#baud').onclick = () => openSheet('aud');
+
+/* video lock */
+let ulkT = 0, ulkHold = 0;
+function showUnlock() { const u = $('#ulk'); u.classList.add('show'); clearTimeout(ulkT); ulkT = setTimeout(() => u.classList.remove('show'), 2600); }
+$('#blk').onclick = () => { locked = true; pl.classList.add('lock'); pl.classList.remove('ui'); $('#spd').classList.remove('show'); $('#sheet').classList.remove('show'); toast('Lock ho gaya'); };
+$('#lk').addEventListener('pointerdown', e => { if (e.target.closest('#ulk')) return; showUnlock(); });
+const ulk = $('#ulk');
+ulk.addEventListener('pointerdown', e => { clearTimeout(ulkT); ulkHold = setTimeout(() => { locked = false; pl.classList.remove('lock'); ulk.classList.remove('show'); toast('Unlock ho gaya'); showUI(); }, 550); });
+['pointerup', 'pointercancel', 'pointerleave'].forEach(t => ulk.addEventListener(t, () => { clearTimeout(ulkHold); showUnlock(); }));
+ulk.addEventListener('contextmenu', e => e.preventDefault());
+
 /* picture in picture + rotate */
 $('#bpip').onclick = () => {
   if (!hasNative()) { toast('Picture-in-Picture sirf app mein chalta hai'); return; }
@@ -468,26 +609,21 @@ window.__pip = on => {
   inPip = !!on; pl.classList.toggle('pip', inPip);
   if (!inPip && !v.paused) showUI();
 };
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden && pl.classList.contains('open')) {
-    setTimeout(() => { if (document.hidden && !inPip && !v.paused) v.pause(); }, 500);
-  }
-});
-
 /* ---------------- gestures ----------------
    tap: controls · double tap sides: ±10s · double tap middle: play/pause
    hold: 2× while held · swipe up/down left: brightness, right: volume · swipe sideways: seek */
 const g = $('#g'), hud = $('#hud'); let hudT = 0;
 function showHud(icon, text, level) {
-  $('#hudt').innerHTML = '<span style="display:flex;gap:8px;align-items:center"><span style="width:20px;height:20px;display:block">' + use(icon) + '</span>' + text + '</span>';
+  $('#hudt').innerHTML = '<span style="display:flex;gap:6px;align-items:center">' + use(icon) + text + '</span>';
   hud.querySelector('.lv').style.display = level == null ? 'none' : '';
   if (level != null) hud.querySelector('.lv i').style.width = Math.round(level * 100) + '%';
   hud.classList.add('show'); clearTimeout(hudT); hudT = setTimeout(() => hud.classList.remove('show'), 700);
 }
+let brSend = 0;
 function setBright(b) {
-  bright = clamp(b, .15, 1.5);
-  $('#dim').style.opacity = bright < 1 ? (1 - bright) * .92 : 0;
-  v.style.filter = bright > 1 ? 'brightness(' + bright + ')' : '';
+  bright = clamp(b, .05, 1);
+  const n = performance.now();
+  if (n - brSend > 40) { brSend = n; nat('bright', { v: bright }); }
 }
 function hint(side) {
   const e = document.querySelector('.hint.' + side);
@@ -520,7 +656,7 @@ g.addEventListener('pointermove', e => {
     showHud('vol', Math.round(v.volume * 100) + '%', v.volume);
   } else if (st.mode === 'bright') {
     setBright(st.sb - dy / (H * .6));
-    showHud('sun', Math.round(bright * 100) + '%', (bright - .15) / 1.35);
+    showHud('sun', Math.round(bright * 100) + '%', (bright - .05) / .95);
   }
 });
 function release(e, cancel) {
