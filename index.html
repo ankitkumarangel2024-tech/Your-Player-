@@ -167,12 +167,19 @@ svg{display:block}
 #sheet button.on{background:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px var(--glow)}
 #sheet p{margin:8px 10px;color:var(--muted);font-size:13px}
 .chip svg{width:18px;height:18px}
+#err{position:absolute;left:16px;right:16px;top:42%;z-index:8;text-align:center;font:600 13px/1.4 var(--font-body);color:#ffd7d7;background:rgba(0,0,0,.55);padding:10px 12px;border-radius:14px;pointer-events:none;word-break:break-word}
 #lk{position:absolute;inset:0;display:none;z-index:9}
 #pl.lock #lk{display:block}
 #pl.lock #ctl,#pl.lock #g,#pl.lock .hint,#pl.lock #hud{display:none}
-#ulk{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:0 22px;height:54px;border-radius:99px;display:flex;align-items:center;gap:10px;font-weight:800;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s;border:0;color:var(--text)}
-#ulk.show{opacity:1;pointer-events:auto}
-#ulk svg{width:20px;height:20px}
+#ulk{position:absolute;right:calc(env(safe-area-inset-right,0px) + 14px);top:calc(env(safe-area-inset-top,0px) + 14px);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;padding:0;opacity:.4;border:0;color:var(--text);cursor:pointer;z-index:10}
+#ulk.show{opacity:.95}
+#ulk svg{width:18px;height:18px}
+
+/* transparent glass controls inside the player */
+#ctl .btn.glass,#ctl .chip.glass{background:linear-gradient(140deg,rgba(255,255,255,.16),rgba(255,255,255,.02) 62%);border:1px solid rgba(255,255,255,.28);
+  box-shadow:inset 1.5px 1.5px 0 rgba(255,255,255,.45),inset -1px -1px 0 rgba(140,215,255,.25)}
+#pl.open ~ .toast{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 150px);padding:8px 14px;font-size:13px}
+#ulk{background:rgba(255,255,255,.12)!important}
 </style>
 </head>
 <body>
@@ -204,7 +211,7 @@ svg{display:block}
   <div class="top">
     <div>
       <h1 class="logo"><span>Your</span> Player</h1>
-      <p id="sub">Apni videos, liquid glass mein</p>
+      <p id="sub">Your videos, in liquid glass</p>
     </div>
   </div>
   <nav class="tabs" id="tabs">
@@ -214,11 +221,11 @@ svg{display:block}
   </nav>
   <div id="scroll">
     <section id="perm" class="perm glass" hidden>
-      <p>Videos dikhane ke liye app ko videos ki permission chahiye.</p>
-      <button class="chip glass" id="permbtn">Settings kholo</button>
+      <p>Allow access to videos so the app can show them.</p>
+      <button class="chip glass" id="permbtn">Open settings</button>
     </section>
     <ul id="list"></ul>
-    <p class="note" id="none" hidden>Koi video nahi mili</p>
+    <p class="note" id="none" hidden>No videos found</p>
   </div>
 </main>
 
@@ -252,7 +259,8 @@ svg{display:block}
     <div id="spd" class="glass"></div>
     <div id="sheet" class="glass"></div>
   </div>
-<div id="lk"><button id="ulk" class="glass"><svg><use href="#i-lock"/></svg>Unlock: dabake rakho</button></div>
+<div id="err" hidden></div>
+<div id="lk"><button id="ulk" class="glass" aria-label="Unlock"><svg><use href="#i-lock"/></svg></button></div>
 </section>
 <div class="toast glass" id="toast"></div>
 
@@ -355,7 +363,7 @@ function rowFor(it, q) {
   const hs = hist[it.vid], pct = hs && hs.d && hs.p ? Math.min(100, Math.round(hs.p / hs.d * 100)) : 0;
   li.innerHTML = '<button class="rm"><div class="th" style="--t:' + hue(it.name) + '">' + use('play') +
     '<em>' + (it.dur ? fmt(it.dur) : '') + '</em></div>' +
-    '<div class="rt"><b></b><span>' + size(it.size) + (pct ? ' · ' + pct + '% dekha' : '') + '</span>' +
+    '<div class="rt"><b></b><span>' + size(it.size) + (pct ? ' · ' + pct + '% watched' : '') + '</span>' +
     (pct ? '<div class="pg"><i style="width:' + pct + '%"></i></div>' : '') + '</div></button>';
   li.querySelector('b').textContent = it.name;
   li.querySelector('.rm').onclick = () => start(items.indexOf(it), q);
@@ -394,9 +402,9 @@ function renderList() {
     arr.forEach(it => { frag.appendChild(rowFor(it, q)); shown++; });
   }
   ul.appendChild(frag);
-  $('#none').textContent = tab === 'hist' ? 'Abhi tak kuch nahi dekha' : 'Koi video nahi mili';
+  $('#none').textContent = tab === 'hist' ? 'Nothing watched yet' : 'No videos found';
   $('#none').hidden = shown > 0 || !hasNative() || !$('#perm').hidden;
-  $('#sub').textContent = items.length ? items.length + (items.length === 1 ? ' video' : ' videos') : 'Apni videos, liquid glass mein';
+  $('#sub').textContent = items.length ? items.length + (items.length === 1 ? ' video' : ' videos') : 'Your videos, in liquid glass';
 }
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; folder = null; renderList(); $('#scroll').scrollTop = 0; });
 
@@ -433,18 +441,20 @@ function start(i, q) {
   cur = i;
   const hs = hist[it.vid], pos = hs && hs.p > 5000 && hs.d && hs.p < hs.d - 10000 ? hs.p : 0;
   $('#ttl').textContent = it.name;
-  v.reset(); v._t = pos / 1000; trk = { a: [], s: [] }; refreshChips();
+  $('#err').hidden = true; v.reset(); v._t = pos / 1000; trk = { a: [], s: [] }; refreshChips();
   pl.classList.add('open');
   document.documentElement.classList.add('playing');
   rate = 1; markSpeed(); v._rate = 1;
   call('open', { id: it.vid, pos }).then(r => {
     if (r && r.vol != null) v._vol = r.vol;
     if (r && r.br != null) bright = clamp(r.br, .05, 1);
-    if (pos) toast('Wahin se shuru: ' + fmt(pos / 1000));
-  }).catch(() => { toast('Video khul nahi payi'); });
+    if (pos) toast('Resuming from ' + fmt(pos / 1000));
+  }).catch(e => { $('#err').textContent = 'Could not open: ' + ((e && e.message) || e); $('#err').hidden = false; });
   nat('playerOpen', { on: true }); nat('keepOn', { on: true }); nat('immersive', { on: true });
   syncPlay(); showUI(true);
+  clearTimeout(waitT); waitT = setTimeout(() => { if (pl.classList.contains('open') && !v.duration && !v._err) { $('#err').textContent = 'Still loading... (no response from the player yet)'; $('#err').hidden = false; } }, 4000);
 }
+let waitT = 0;
 function stop() {
   if (!pl.classList.contains('open')) return;
   remember(); saveHist(true);
@@ -458,7 +468,7 @@ function stop() {
   renderList();
 }
 window.__back = () => {
-  if (locked) { toast('Locked hai — unlock karne ke liye lock dabake rakho'); showUnlock(); return; }
+  if (locked) { toast('Screen is locked — tap the lock icon in the corner to unlock'); showUnlock(); return; }
   if ($('#sheet').classList.contains('show')) { $('#sheet').classList.remove('show'); return; }
   stop();
 };
@@ -557,7 +567,8 @@ window.__ps = o => {
   if (v.paused !== was) v.emit(v.paused ? 'pause' : 'play');
   if (n - volAt > 1500 && o.vl != null) v._vol = o.vl;
   if (o.st === 4) { if (!v._ended) { v._ended = true; v.emit('ended'); } } else v._ended = false;
-  if (o.e && o.e !== v._err) { v._err = o.e; toast('Ye video nahi chal payi (' + String(o.e).replace('ERROR_CODE_', '') + ')'); showUI(true); }
+  if (o.e && o.e !== v._err) { v._err = o.e; $('#err').textContent = 'Cannot play this video: ' + o.e; $('#err').hidden = false; showUI(true); }
+  if (o.st === 3 && !o.e) $('#err').hidden = true;
   v.emit('timeupdate');
 };
 window.__tr = o => { trk = o || { a: [], s: [] }; refreshChips(); if ($('#sheet').classList.contains('show')) drawSheet(); };
@@ -573,10 +584,10 @@ function drawSheet() {
     head('SUBTITLES');
     add('Off', !trk.s.some(t => t.sel), () => { call('pickText', { g: -1 }); sh.classList.remove('show'); });
     trk.s.forEach(t => add(t.n, t.sel, () => { call('pickText', { g: t.g, t: t.t }); sh.classList.remove('show'); }));
-    add('+ Subtitle file chuno (.srt .vtt .ass)', false, () => { sh.classList.remove('show'); call('addSub').then(() => toast('Subtitle laga di')).catch(() => {}); });
+    add('+ Add subtitle file (.srt .vtt .ass)', false, () => { sh.classList.remove('show'); call('addSub').then(() => toast('Subtitle added')).catch(() => {}); });
   } else {
     head('AUDIO TRACK');
-    if (!trk.a.length) { const p = document.createElement('p'); p.textContent = 'Is video mein sirf ek audio track hai'; sh.appendChild(p); }
+    if (!trk.a.length) { const p = document.createElement('p'); p.textContent = 'This video has only one audio track'; sh.appendChild(p); }
     trk.a.forEach(t => add(t.n, t.sel, () => { call('pickAudio', { g: t.g, t: t.t }); sh.classList.remove('show'); }));
   }
 }
@@ -590,18 +601,15 @@ $('#bcc').onclick = () => openSheet('sub');
 $('#baud').onclick = () => openSheet('aud');
 
 /* video lock */
-let ulkT = 0, ulkHold = 0;
-function showUnlock() { const u = $('#ulk'); u.classList.add('show'); clearTimeout(ulkT); ulkT = setTimeout(() => u.classList.remove('show'), 2600); }
-$('#blk').onclick = () => { locked = true; pl.classList.add('lock'); pl.classList.remove('ui'); $('#spd').classList.remove('show'); $('#sheet').classList.remove('show'); toast('Lock ho gaya'); };
-$('#lk').addEventListener('pointerdown', e => { if (e.target.closest('#ulk')) return; showUnlock(); });
-const ulk = $('#ulk');
-ulk.addEventListener('pointerdown', e => { clearTimeout(ulkT); ulkHold = setTimeout(() => { locked = false; pl.classList.remove('lock'); ulk.classList.remove('show'); toast('Unlock ho gaya'); showUI(); }, 550); });
-['pointerup', 'pointercancel', 'pointerleave'].forEach(t => ulk.addEventListener(t, () => { clearTimeout(ulkHold); showUnlock(); }));
-ulk.addEventListener('contextmenu', e => e.preventDefault());
+let ulkT = 0;
+function showUnlock() { const u = $('#ulk'); u.classList.add('show'); clearTimeout(ulkT); ulkT = setTimeout(() => u.classList.remove('show'), 2200); }
+$('#blk').onclick = () => { locked = true; pl.classList.add('lock'); pl.classList.remove('ui'); $('#spd').classList.remove('show'); $('#sheet').classList.remove('show'); toast('Locked'); };
+$('#lk').addEventListener('pointerdown', e => { if (!e.target.closest('#ulk')) showUnlock(); });
+$('#ulk').onclick = () => { locked = false; pl.classList.remove('lock'); toast('Unlocked'); showUI(); };
 
 /* picture in picture + rotate */
 $('#bpip').onclick = () => {
-  if (!hasNative()) { toast('Picture-in-Picture sirf app mein chalta hai'); return; }
+  if (!hasNative()) { toast('Picture-in-Picture works only in the app'); return; }
   nat('pipArmed', { on: true }); nat('enterPip');
 };
 $('#brot').onclick = () => { land = !land; nat('landscape', { on: land }); showUI(); };

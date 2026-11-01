@@ -6,6 +6,8 @@ import android.content.Context;
 import android.graphics.Color;
 import android.media.AudioManager;
 import android.os.Handler;
+import android.os.ParcelFileDescriptor;
+import java.io.File;
 import android.os.Looper;
 import android.provider.OpenableColumns;
 import android.view.ViewGroup;
@@ -59,6 +61,7 @@ public class VibePlugin extends Plugin {
   private PlayerView pv;
   private Uri curUri;
   private String lastErr = "";
+  private String diag = "";
   private boolean ended = false;
   private final Handler hd = new Handler(Looper.getMainLooper());
   private boolean ticking = false;
@@ -136,7 +139,7 @@ public class VibePlugin extends Plugin {
     pl.addListener(new Player.Listener() {
       @Override
       public void onPlayerError(PlaybackException e) {
-        lastErr = e.getErrorCodeName();
+        lastErr = e.getErrorCodeName() + (e.getMessage() != null ? " - " + e.getMessage() : "") + (e.getCause() != null ? " / " + e.getCause().getMessage() : "") + diag;
         push();
       }
 
@@ -249,7 +252,43 @@ public class VibePlugin extends Plugin {
       public void run() {
         try {
           ensure();
-          curUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id);
+          Uri content = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id);
+          curUri = content;
+          diag = "";
+          String path = null;
+          Cursor pc = null;
+          try {
+            pc = getContext().getContentResolver().query(content, new String[] {"_data"}, null, null, null);
+            if (pc != null && pc.moveToFirst()) {
+              path = pc.getString(0);
+            }
+          } catch (Throwable t) {
+            diag += " [query: " + t + "]";
+          } finally {
+            if (pc != null) {
+              pc.close();
+            }
+          }
+          try {
+            ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(content, "r");
+            if (pfd != null) {
+              pfd.close();
+              diag += " [content ok]";
+            } else {
+              diag += " [content null]";
+            }
+          } catch (Throwable t) {
+            diag += " [content: " + t + "]";
+          }
+          if (path != null) {
+            File f = new File(path);
+            diag += " [path=" + path + " exists=" + f.exists() + " read=" + f.canRead() + "]";
+            if (f.exists() && f.canRead()) {
+              curUri = Uri.fromFile(f);
+            }
+          } else {
+            diag += " [no path]";
+          }
           lastErr = "";
           ended = false;
           pl.setPlaybackParameters(new PlaybackParameters(1f));
@@ -269,6 +308,7 @@ public class VibePlugin extends Plugin {
           call.resolve(res);
         } catch (Throwable t) {
           call.reject("open failed: " + t);
+          lastErr = "open: " + t;
         }
       }
     });
