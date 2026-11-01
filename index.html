@@ -176,10 +176,16 @@ svg{display:block}
 #ulk svg{width:18px;height:18px}
 
 /* transparent glass controls inside the player */
-#ctl .btn.glass,#ctl .chip.glass{background:linear-gradient(140deg,rgba(255,255,255,.16),rgba(255,255,255,.02) 62%);border:1px solid rgba(255,255,255,.28);
-  box-shadow:inset 1.5px 1.5px 0 rgba(255,255,255,.45),inset -1px -1px 0 rgba(140,215,255,.25)}
+#ctl .btn.glass,#ctl .chip.glass,#ctl .btn.big{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.3)!important;
+  box-shadow:inset 1px 1px 0 rgba(255,255,255,.4),inset -1px -1px 0 rgba(140,215,255,.2)!important}
+#ctl .btn svg,#ctl .chip svg{filter:drop-shadow(0 1px 4px rgba(0,0,0,.7))}
 #pl.open ~ .toast{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 150px);padding:8px 14px;font-size:13px}
 #ulk{background:rgba(255,255,255,.12)!important}
+#mid .btn,#mid .btn.glass,#mid .btn.big{background:rgba(255,255,255,.05)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)!important;border:0!important;-webkit-backdrop-filter:none;backdrop-filter:none}
+#mid .btn.big{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.5),0 0 22px -8px var(--glow)!important}
+#mid .btn,#mid .btn.big{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.4)!important;box-shadow:none!important;-webkit-backdrop-filter:none;backdrop-filter:none}
+#mid .btn::before{display:none}
+#mid .btn svg{filter:drop-shadow(0 1px 6px rgba(0,0,0,.7))}
 </style>
 </head>
 <body>
@@ -404,7 +410,7 @@ function renderList() {
   ul.appendChild(frag);
   $('#none').textContent = tab === 'hist' ? 'Nothing watched yet' : 'No videos found';
   $('#none').hidden = shown > 0 || !hasNative() || !$('#perm').hidden;
-  $('#sub').textContent = items.length ? items.length + (items.length === 1 ? ' video' : ' videos') : 'Your videos, in liquid glass';
+  $('#sub').textContent = items.length ? items.length + (items.length === 1 ? ' video' : ' videos') + ' · v3' : 'Your videos, in liquid glass · v3';
 }
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; folder = null; renderList(); $('#scroll').scrollTop = 0; });
 
@@ -423,7 +429,9 @@ function scanLib() {
       size: o.size || 0, dur: (o.dur || 0) / 1000, thumb: ''
     });
     items.length = 0; items.push(...scanned); cur = -1;
-    renderList();
+    call('positions').then(m => {
+      for (const k in m) { const e = m[k], c = hist[k]; if (!c || e.t > c.t) hist[k] = { p: e.p, d: e.d, t: e.t }; }
+    }).catch(() => {}).then(() => renderList());
   }).catch(() => { scanning = false; });
 }
 window.__vperm = ok => { if (ok) scanLib(); else { $('#perm').hidden = false; renderList(); } };

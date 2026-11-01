@@ -2,6 +2,7 @@ package __PKG__;
 
 import android.app.PictureInPictureParams;
 import androidx.activity.OnBackPressedCallback;
+import androidx.lifecycle.Lifecycle;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Build;
@@ -117,16 +118,44 @@ public class MainActivity extends BridgeActivity {
     }
   }
 
-  @Override
-  protected void onStop() {
-    super.onStop();
+  private boolean fg = false;
+  private final android.os.Handler hh = new android.os.Handler(android.os.Looper.getMainLooper());
+
+  private void pauseIfHidden() {
     boolean pip = false;
     if (Build.VERSION.SDK_INT >= 24) {
       pip = isInPictureInPictureMode();
     }
-    if (!pip && VibePlugin.inst != null) {
+    if (!pip && !fg && VibePlugin.inst != null) {
       VibePlugin.inst.pausePlayer();
     }
+  }
+
+  @Override
+  public void onResume() {
+    super.onResume();
+    fg = true;
+  }
+
+  @Override
+  public void onStop() {
+    super.onStop();
+    fg = false;
+    pauseIfHidden();
+    hh.postDelayed(new Runnable() {
+      @Override
+      public void run() {
+        pauseIfHidden();
+      }
+    }, 600);
+  }
+
+  @Override
+  public void onDestroy() {
+    if (VibePlugin.inst != null) {
+      VibePlugin.inst.pausePlayer();
+    }
+    super.onDestroy();
   }
 
   @Override
@@ -141,5 +170,16 @@ public class MainActivity extends BridgeActivity {
   public void onPictureInPictureModeChanged(boolean inPip, Configuration cfg) {
     super.onPictureInPictureModeChanged(inPip, cfg);
     runJs("window.__pip&&window.__pip(" + inPip + ")");
+    if (!inPip) {
+      hh.postDelayed(new Runnable() {
+        @Override
+        public void run() {
+          pauseIfHidden();
+        }
+      }, 400);
+    }
+    if (!inPip && !getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED) && VibePlugin.inst != null) {
+      VibePlugin.inst.pausePlayer();
+    }
   }
 }
