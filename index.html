@@ -7,7 +7,7 @@
 <title>Your Player</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;800&family=Unbounded:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;800&family=Unbounded:wght@500;700&display=swap" media="print" onload="this.media='all'">
 <style>
 :root{
   --ink:#04060c;--text:#eaf7ff;--muted:#9bb2c8;--h:200;
@@ -428,6 +428,7 @@ function scanLib() {
       size: o.size || 0, dur: (o.dur || 0) / 1000, thumb: ''
     });
     items.length = 0; items.push(...scanned); cur = -1;
+    try { localStorage.setItem('yp_lib', JSON.stringify(scanned.map(i => ({ vid: i.vid, name: i.name, folder: i.folder, size: i.size, dur: i.dur })))); } catch (e) {}
     call('positions').then(m => {
       for (const k in m) { const e = m[k], c = hist[k]; if (!c || e.t > c.t) hist[k] = { p: e.p, d: e.d, t: e.t }; }
     }).catch(() => {}).then(() => renderList());
@@ -696,6 +697,9 @@ g.addEventListener('pointerup', e => release(e, false));
 g.addEventListener('pointercancel', e => release(e, true));
 g.addEventListener('contextmenu', e => e.preventDefault());
 
+try {
+  JSON.parse(localStorage.getItem('yp_lib') || '[]').forEach(o => items.push({ id: ++uid, vid: o.vid, name: o.name, folder: o.folder || 'Other', size: o.size || 0, dur: o.dur || 0, thumb: '' }));
+} catch (e) {}
 renderList();
 scanLib();
 })();
