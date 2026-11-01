@@ -108,25 +108,13 @@ public class MainActivity extends BridgeActivity {
   }
 
   public void goPip() {
-    if (Build.VERSION.SDK_INT >= 26) {
-      try {
-        PictureInPictureParams p = new PictureInPictureParams.Builder()
-            .setAspectRatio(new Rational(ratio, 100)).build();
-        enterPictureInPictureMode(p);
-      } catch (Throwable t) {
-      }
-    }
   }
 
-  private boolean fg = false;
+  public static volatile boolean fg = false;
   private final android.os.Handler hh = new android.os.Handler(android.os.Looper.getMainLooper());
 
   private void pauseIfHidden() {
-    boolean pip = false;
-    if (Build.VERSION.SDK_INT >= 24) {
-      pip = isInPictureInPictureMode();
-    }
-    if (!pip && !fg && VibePlugin.inst != null) {
+    if (!fg && VibePlugin.inst != null) {
       VibePlugin.inst.pausePlayer();
     }
   }
@@ -142,12 +130,6 @@ public class MainActivity extends BridgeActivity {
     super.onStop();
     fg = false;
     pauseIfHidden();
-    hh.postDelayed(new Runnable() {
-      @Override
-      public void run() {
-        pauseIfHidden();
-      }
-    }, 600);
   }
 
   @Override
@@ -156,14 +138,6 @@ public class MainActivity extends BridgeActivity {
       VibePlugin.inst.pausePlayer();
     }
     super.onDestroy();
-  }
-
-  @Override
-  protected void onUserLeaveHint() {
-    super.onUserLeaveHint();
-    if (pipArmed) {
-      goPip();
-    }
   }
 
   @Override

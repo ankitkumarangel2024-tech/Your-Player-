@@ -74,6 +74,15 @@ public class VibePlugin extends Plugin {
         ticking = false;
         return;
       }
+      if (!MainActivity.fg && pl.getPlayWhenReady()) {
+        boolean pip = false;
+        if (Build.VERSION.SDK_INT >= 24) {
+          pip = act().isInPictureInPictureMode();
+        }
+        if (!pip) {
+          pl.setPlayWhenReady(false);
+        }
+      }
       push();
       saveN++;
       if (saveN % 16 == 0) {

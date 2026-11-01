@@ -246,7 +246,6 @@ svg{display:block}
       <button class="btn glass" id="bk" aria-label="Back"><svg><use href="#i-back"/></svg></button>
       <h2 id="ttl"></h2>
       <button class="btn glass" id="blk" aria-label="Lock"><svg><use href="#i-lock"/></svg></button>
-      <button class="btn glass" id="bpip" aria-label="Picture in picture"><svg><use href="#i-pip"/></svg></button>
       <button class="btn glass" id="brot" aria-label="Rotate"><svg><use href="#i-rot"/></svg></button>
     </div>
     <div id="mid">
@@ -614,10 +613,6 @@ $('#lk').addEventListener('pointerdown', e => { if (!e.target.closest('#ulk')) s
 $('#ulk').onclick = () => { locked = false; pl.classList.remove('lock'); toast('Unlocked'); showUI(); };
 
 /* picture in picture + rotate */
-$('#bpip').onclick = () => {
-  if (!hasNative()) { toast('Picture-in-Picture works only in the app'); return; }
-  nat('pipArmed', { on: true }); nat('enterPip');
-};
 $('#brot').onclick = () => { land = !land; nat('landscape', { on: land }); showUI(); };
 window.__pip = on => {
   inPip = !!on; pl.classList.toggle('pip', inPip);

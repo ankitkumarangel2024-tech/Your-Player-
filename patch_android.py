@@ -7,7 +7,6 @@ add = ''.join('    <uses-permission android:name="android.permission.%s" />\n' %
 add += '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n'
 if add:
     s = s.replace('<application', add + '    <application', 1)
-s = s.replace('<activity', '<activity android:supportsPictureInPicture="true"', 1)
 s = s.replace('<application', '<application android:name=".CrashApp" android:usesCleartextTraffic="true"', 1)
 open(man, 'w', encoding='utf-8').write(s)
 print('manifest ok')
