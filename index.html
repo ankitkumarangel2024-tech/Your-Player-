@@ -108,7 +108,7 @@ svg{display:block}
 .hint.show{animation:hint .6s ease-out}
 @keyframes hint{0%{opacity:0;transform:scale(.8)}25%{opacity:1;transform:scale(1)}100%{opacity:0}}
 #hud{position:absolute;left:50%;top:18%;transform:translateX(-50%);min-width:96px;padding:8px 14px;border-radius:20px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;
-  font-weight:800;font-variant-numeric:tabular-nums;opacity:0;pointer-events:none;transition:opacity .25s}
+  font-weight:800;font-variant-numeric:tabular-nums;opacity:0;pointer-events:none;transition:opacity .15s}
 #hud.show{opacity:1}
 #hud svg{width:15px;height:15px}
 #hud .lv{width:84px;height:3px;border-radius:9px;background:rgba(255,255,255,.22);overflow:hidden}
@@ -221,7 +221,7 @@ svg{display:block}
     </div>
   </div>
   <nav class="tabs" id="tabs">
-    <button data-t="all" class="on"><svg><use href="#i-list"/></svg>Sab</button>
+    <button data-t="all" class="on"><svg><use href="#i-list"/></svg>All</button>
     <button data-t="folders"><svg><use href="#i-folder"/></svg>Folders</button>
     <button data-t="hist"><svg><use href="#i-clock"/></svg>History</button>
   </nav>
@@ -503,8 +503,6 @@ v.addEventListener('loadedmetadata', () => {
   $('#td').textContent = fmt(v.duration);
   const r = v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : 1.78;
   nat('ratio', { v: Math.round(clamp(r, .5, 2.3) * 100) });
-  land = v.videoWidth >= v.videoHeight;
-  nat('landscape', { on: land });
 });
 v.addEventListener('timeupdate', paint);
 
@@ -633,7 +631,7 @@ function showHud(icon, text, level) {
   $('#hudt').innerHTML = '<span style="display:flex;gap:6px;align-items:center">' + use(icon) + text + '</span>';
   hud.querySelector('.lv').style.display = level == null ? 'none' : '';
   if (level != null) hud.querySelector('.lv i').style.width = Math.round(level * 100) + '%';
-  hud.classList.add('show'); clearTimeout(hudT); hudT = setTimeout(() => hud.classList.remove('show'), 700);
+  hud.classList.add('show'); clearTimeout(hudT); hudT = setTimeout(() => hud.classList.remove('show'), 500);
 }
 let brSend = 0;
 function setBright(b) {
@@ -679,6 +677,7 @@ function release(e, cancel) {
   clearTimeout(lpT);
   if (!st) return;
   const s = st; st = null;
+  if (s.mode === 'vol' || s.mode === 'bright' || s.mode === 'seek') { clearTimeout(hudT); hudT = setTimeout(() => hud.classList.remove('show'), 150); }
   if (s.mode === 'boost') { boosting = false; v.playbackRate = rate; $('#boost').classList.remove('show'); return; }
   if (s.mode === 'seek') { if (!cancel) v.currentTime = s.tgt; return; }
   if (s.mode) return;

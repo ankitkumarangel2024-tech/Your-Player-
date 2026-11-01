@@ -62,6 +62,8 @@ public class VibePlugin extends Plugin {
   private Uri curUri;
   private String lastErr = "";
   private String diag = "";
+  private long curId = -1;
+  private int saveN = 0;
   private boolean ended = false;
   private final Handler hd = new Handler(Looper.getMainLooper());
   private boolean ticking = false;
@@ -73,6 +75,10 @@ public class VibePlugin extends Plugin {
         return;
       }
       push();
+      saveN++;
+      if (saveN % 16 == 0) {
+        savePos();
+      }
       hd.postDelayed(this, 250);
     }
   };
@@ -94,11 +100,67 @@ public class VibePlugin extends Plugin {
     }
   }
 
+  private static double num(PluginCall c, String k, double d) {
+    try {
+      Object o = c.getData().opt(k);
+      if (o instanceof Number) {
+        return ((Number) o).doubleValue();
+      }
+      if (o instanceof String) {
+        return Double.parseDouble((String) o);
+      }
+    } catch (Throwable t) {
+    }
+    return d;
+  }
+
   private MainActivity act() {
     return (MainActivity) getActivity();
   }
 
+  public void savePos() {
+    try {
+      if (pl == null || curId < 0) {
+        return;
+      }
+      long d = pl.getDuration();
+      long p = pl.getCurrentPosition();
+      if (d <= 0 || p < 3000) {
+        return;
+      }
+      long pp = p > d - 8000 ? 0 : p;
+      getContext().getSharedPreferences("yp", 0).edit()
+          .putString("p" + curId, pp + "," + d + "," + System.currentTimeMillis()).apply();
+    } catch (Throwable t) {
+    }
+  }
+
+  @PluginMethod
+  public void positions(PluginCall call) {
+    JSObject res = new JSObject();
+    try {
+      java.util.Map<String, ?> all = getContext().getSharedPreferences("yp", 0).getAll();
+      for (java.util.Map.Entry<String, ?> e : all.entrySet()) {
+        if (!e.getKey().startsWith("p") || !(e.getValue() instanceof String)) {
+          continue;
+        }
+        String[] a = ((String) e.getValue()).split(",");
+        if (a.length < 3) {
+          continue;
+        }
+        JSObject o = new JSObject();
+        o.put("p", Long.parseLong(a[0]));
+        o.put("d", Long.parseLong(a[1]));
+        o.put("t", Long.parseLong(a[2]));
+        res.put(e.getKey().substring(1), o);
+      }
+    } catch (Throwable t) {
+    }
+    call.resolve(res);
+  }
+
   public void pausePlayer() {
+    savePos();
     if (pl != null) {
       pl.setPlayWhenReady(false);
     }
@@ -244,8 +306,8 @@ public class VibePlugin extends Plugin {
 
   @PluginMethod
   public void open(final PluginCall call) {
-    final long id = call.getLong("id", 0L);
-    final long pos = call.getLong("pos", 0L);
+    final long id = (long) num(call, "id", 0);
+    final long pos = (long) num(call, "pos", 0);
     final MainActivity a = act();
     a.runOnUiThread(new Runnable() {
       @Override
@@ -254,6 +316,7 @@ public class VibePlugin extends Plugin {
           ensure();
           Uri content = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id);
           curUri = content;
+          curId = id;
           diag = "";
           String path = null;
           Cursor pc = null;
@@ -320,6 +383,7 @@ public class VibePlugin extends Plugin {
       @Override
       public void run() {
         try {
+          savePos();
           hd.removeCallbacks(tick);
           ticking = false;
           if (pl != null) {
@@ -359,7 +423,7 @@ public class VibePlugin extends Plugin {
 
   @PluginMethod
   public void seek(final PluginCall call) {
-    final long ms = call.getLong("ms", 0L);
+    final long ms = (long) num(call, "ms", 0);
     act().runOnUiThread(new Runnable() {
       @Override
       public void run() {
@@ -374,7 +438,7 @@ public class VibePlugin extends Plugin {
 
   @PluginMethod
   public void rate(final PluginCall call) {
-    final float r = call.getFloat("v", 1f);
+    final float r = (float) num(call, "v", 1);
     act().runOnUiThread(new Runnable() {
       @Override
       public void run() {
@@ -388,7 +452,7 @@ public class VibePlugin extends Plugin {
 
   @PluginMethod
   public void vol(final PluginCall call) {
-    final float v = call.getFloat("v", 0.5f);
+    final float v = (float) num(call, "v", 0.5);
     try {
       AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
       int mx = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -400,7 +464,7 @@ public class VibePlugin extends Plugin {
 
   @PluginMethod
   public void bright(final PluginCall call) {
-    final float v = call.getFloat("v", 0.5f);
+    final float v = (float) num(call, "v", 0.5);
     act().runOnUiThread(new Runnable() {
       @Override
       public void run() {
@@ -425,8 +489,8 @@ public class VibePlugin extends Plugin {
 
   @PluginMethod
   public void pickAudio(final PluginCall call) {
-    final int gi = call.getInt("g", -1);
-    final int ti = call.getInt("t", 0);
+    final int gi = (int) num(call, "g", -1);
+    final int ti = (int) num(call, "t", 0);
     act().runOnUiThread(new Runnable() {
       @Override
       public void run() {
@@ -443,8 +507,8 @@ public class VibePlugin extends Plugin {
 
   @PluginMethod
   public void pickText(final PluginCall call) {
-    final int gi = call.getInt("g", -1);
-    final int ti = call.getInt("t", 0);
+    final int gi = (int) num(call, "g", -1);
+    final int ti = (int) num(call, "t", 0);
     act().runOnUiThread(new Runnable() {
       @Override
       public void run() {
@@ -539,7 +603,7 @@ public class VibePlugin extends Plugin {
 
   @PluginMethod
   public void ratio(PluginCall call) {
-    MainActivity.ratio = call.getInt("v", 178);
+    MainActivity.ratio = (int) num(call, "v", 178);
     call.resolve();
   }
 
@@ -592,7 +656,7 @@ public class VibePlugin extends Plugin {
     a.runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        a.setRequestedOrientation(on ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        a.setRequestedOrientation(on ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             : ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
       }
     });
@@ -655,8 +719,8 @@ public class VibePlugin extends Plugin {
   /* small preview picture of one video, as a data address */
   @PluginMethod
   public void thumb(PluginCall call) {
-    Long id = call.getLong("id");
-    if (id == null) {
+    long id = (long) num(call, "id", -1);
+    if (id < 0) {
       call.reject("id");
       return;
     }
