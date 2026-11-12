@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#04060c">
+<meta name="theme-color" content="#000000">
 <title>Your Player</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;800&family=Unbounded:wght@500;700&display=swap" media="print" onload="this.media='all'">
 <style>
 :root{
-  --ink:#04060c;--text:#eaf7ff;--muted:#9bb2c8;--h:200;
+  --ink:#000;--text:#eaf7ff;--muted:#9bb2c8;--h:200;
   --glow:hsl(var(--h) 100% 70%);--glow2:hsl(calc(var(--h) + 70) 95% 70%);
   --edge:rgba(255,255,255,.22);
   --font-display:'Unbounded','Trebuchet MS',system-ui,sans-serif;
@@ -175,17 +175,51 @@ svg{display:block}
 #ulk.show{opacity:.95}
 #ulk svg{width:18px;height:18px}
 
-/* transparent glass controls inside the player */
-#ctl .btn.glass,#ctl .chip.glass,#ctl .btn.big{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.3)!important;
-  box-shadow:inset 1px 1px 0 rgba(255,255,255,.4),inset -1px -1px 0 rgba(140,215,255,.2)!important}
-#ctl .btn svg,#ctl .chip svg{filter:drop-shadow(0 1px 4px rgba(0,0,0,.7))}
-#pl.open ~ .toast{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 150px);padding:8px 14px;font-size:13px}
-#ulk{background:rgba(255,255,255,.12)!important}
-#mid .btn,#mid .btn.glass,#mid .btn.big{background:rgba(255,255,255,.05)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)!important;border:0!important;-webkit-backdrop-filter:none;backdrop-filter:none}
-#mid .btn.big{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.5),0 0 22px -8px var(--glow)!important}
-#mid .btn,#mid .btn.big{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.4)!important;box-shadow:none!important;-webkit-backdrop-filter:none;backdrop-filter:none}
-#mid .btn::before{display:none}
-#mid .btn svg{filter:drop-shadow(0 1px 6px rgba(0,0,0,.7))}
+/* ---------- AMOLED look ---------- */
+.orbs{display:none}
+.glass{background:#0b0b0b;border:1px solid rgba(255,255,255,.1);box-shadow:none}
+.rw.glass{background:#0b0b0b}
+.tabs button{background:#0b0b0b;border-color:rgba(255,255,255,.1)}
+.tabs button.on{background:#1a1a1a;box-shadow:none;border-color:rgba(255,255,255,.3)}
+.th{box-shadow:none}
+.logo span{filter:none}
+#pl.open ~ .toast{background:none;border:0;box-shadow:none;color:#fff;text-shadow:0 1px 8px #000,0 0 3px #000}
+
+/* ---------- player controls (flat, like the reference) ---------- */
+#ctl{background:linear-gradient(180deg,rgba(0,0,0,.6),transparent 22%,transparent 55%,rgba(0,0,0,.78))}
+#ctl .btn{width:42px;height:42px;background:none!important;border:0!important;box-shadow:none!important;color:#fff;
+  -webkit-backdrop-filter:none;backdrop-filter:none}
+#ctl .btn::before{display:none}
+#ctl .btn svg{width:24px;height:24px;filter:drop-shadow(0 1px 4px rgba(0,0,0,.8))}
+#ctl .btn.on{color:var(--glow)}
+#ctl .btn.txt{width:auto;min-width:42px;padding:0 6px;font-weight:800;font-size:15px}
+#ctl .btn.big{width:54px;height:54px}
+#ctl .btn.big svg{width:34px;height:34px;filter:drop-shadow(0 1px 4px rgba(0,0,0,.8))}
+#tb h2{text-align:center;font:600 13px/1.3 var(--font-body);opacity:.9}
+#row2{display:flex;justify-content:flex-end;gap:4px;margin:0 0 -4px}
+.tm{font-size:12.5px;font-weight:600}
+#sk .tr{height:3px;margin-top:-1.5px;background:rgba(255,255,255,.28)}
+#sk .fl{height:3px;margin-top:-1.5px;background:#fff;box-shadow:none}
+#sk .bd{width:15px;height:15px;margin:-7.5px 0 0 -7.5px;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.18)}
+#sk.drag .bd{width:22px;height:22px;margin:-11px 0 0 -11px}
+#dock{display:flex;align-items:center;justify-content:center;gap:clamp(0px,1.5vw,10px);width:max-content;max-width:100%;margin:2px auto 0;padding:4px 8px;border-radius:22px;background:rgba(255,255,255,.12)}
+#dock i{width:1px;align-self:stretch;margin:8px 4px;background:rgba(255,255,255,.18)}
+#bt{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px)}
+#pl.ui #ctl #dock .btn,#pl.ui #ctl #row2 .btn{pointer-events:auto}
+#spd,#sheet{background:rgba(12,12,12,.96);border:1px solid rgba(255,255,255,.12);box-shadow:none}
+#spd{bottom:calc(env(safe-area-inset-bottom,0px) + 150px)}
+#sheet{bottom:calc(env(safe-area-inset-bottom,0px) + 150px);width:min(380px,86vw);max-height:calc(100vh - 150px - env(safe-area-inset-bottom,0px) - 56px);min-height:0}
+#spd button,#sheet button{background:rgba(255,255,255,.08)}
+#spd button.on{background:#fff;color:#000}
+#sheet button.on{background:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px #fff}
+#sheet .row{display:flex;flex-wrap:wrap;gap:6px;padding:0 4px}
+#sheet .row button{min-height:38px;padding:0 12px;display:inline-flex;align-items:center;gap:7px;text-align:center}
+#sheet .dot{width:14px;height:14px;border-radius:50%;flex:none;border:1px solid rgba(255,255,255,.4)}
+
+/* words only (no boxes) */
+.hint div{background:none!important;border:0!important;box-shadow:none!important;padding:0;font-size:17px;text-shadow:0 1px 10px #000,0 0 3px #000}
+#boost{left:max(18px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 62px);transform:none;padding:0;background:none;border:0;box-shadow:none;color:#fff;font-size:15px;text-shadow:0 1px 10px #000,0 0 3px #000}
+#ulk{background:rgba(255,255,255,.12)!important;box-shadow:none!important}
 </style>
 </head>
 <body>
@@ -208,6 +242,11 @@ svg{display:block}
   <symbol id="i-folder" viewBox="0 0 24 24"><path class="s" d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></symbol>
   <symbol id="i-clock" viewBox="0 0 24 24"><circle class="s" cx="12" cy="12" r="8.5"/><path class="s" d="M12 7.5V12l3 2"/></symbol>
   <symbol id="i-list" viewBox="0 0 24 24"><path class="s" d="M5 7h14M5 12h14M5 17h14"/></symbol>
+  <symbol id="i-rew" viewBox="0 0 24 24"><path class="s" d="M5 12a7.2 7.2 0 1 0 2.3-5.3M5 3.8v4.4h4.4"/><text x="12.1" y="15.4" font-size="7.6" font-weight="800" text-anchor="middle" fill="currentColor" stroke="none">10</text></symbol>
+  <symbol id="i-ff" viewBox="0 0 24 24"><path class="s" d="M19 12a7.2 7.2 0 1 1-2.3-5.3M19 3.8v4.4h-4.4"/><text x="11.9" y="15.4" font-size="7.6" font-weight="800" text-anchor="middle" fill="currentColor" stroke="none">10</text></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><path class="f" d="M4 9.5v5h3.6l4.6 3.8V5.7L7.6 9.5z"/><path class="s" d="M16 9.5l5 5M21 9.5l-5 5"/></symbol>
+  <symbol id="i-fit" viewBox="0 0 24 24"><path class="s" d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/><rect class="s" x="9" y="9.5" width="6" height="5" rx="1"/></symbol>
+  <symbol id="i-aa" viewBox="0 0 24 24"><text x="12" y="16.5" font-size="12.5" font-weight="800" text-anchor="middle" fill="currentColor" stroke="none">Aa</text></symbol>
   <symbol id="i-seek" viewBox="0 0 24 24"><path class="s" d="M4 12h16M13 6l7 6-7 6"/></symbol>
 </svg>
 
@@ -237,35 +276,47 @@ svg{display:block}
 
 <section id="pl" aria-label="Player">
   <div id="g"></div>
-  <div class="hint l"><div class="glass"><svg width="20" height="20" style="transform:scaleX(-1)"><use href="#i-fwd"/></svg>10 sec</div></div>
-  <div class="hint r"><div class="glass">10 sec<svg width="20" height="20"><use href="#i-fwd"/></svg></div></div>
+  <div class="hint l"><div><svg width="20" height="20" style="transform:scaleX(-1)"><use href="#i-fwd"/></svg>10 sec</div></div>
+  <div class="hint r"><div>10 sec<svg width="20" height="20"><use href="#i-fwd"/></svg></div></div>
   <div id="hud" class="glass"><div id="hudt"></div><div class="lv"><i></i></div></div>
-  <div id="boost" class="glass"><svg><use href="#i-fwd"/></svg>2× speed</div>
+  <div id="boost"><svg><use href="#i-fwd"/></svg>2× speed</div>
   <div id="ctl">
     <div id="tb" class="bar">
-      <button class="btn glass" id="bk" aria-label="Back"><svg><use href="#i-back"/></svg></button>
+      <button class="btn" id="bk" aria-label="Back"><svg><use href="#i-back"/></svg></button>
       <h2 id="ttl"></h2>
-      <button class="btn glass" id="blk" aria-label="Lock"><svg><use href="#i-lock"/></svg></button>
-      <button class="btn glass" id="brot" aria-label="Rotate"><svg><use href="#i-rot"/></svg></button>
-    </div>
-    <div id="mid">
-      <button class="btn glass mid" id="bprev" aria-label="Previous"><svg><use href="#i-prev"/></svg></button>
-      <button class="btn big" id="bplay" aria-label="Play or pause"><svg><use href="#i-play"/></svg></button>
-      <button class="btn glass mid" id="bnext" aria-label="Next"><svg><use href="#i-next"/></svg></button>
+      <button class="btn" id="bmute" aria-label="Mute"><svg><use href="#i-vol"/></svg></button>
+      <button class="btn" id="brot" aria-label="Rotate"><svg><use href="#i-rot"/></svg></button>
     </div>
     <div id="bt">
+      <div id="row2">
+        <button class="btn" id="baud" aria-label="Audio"><svg><use href="#i-audio"/></svg></button>
+        <button class="btn" id="bcc" aria-label="Subtitles"><svg><use href="#i-cc"/></svg></button>
+        <button class="btn" id="baa" aria-label="Subtitle style"><svg><use href="#i-aa"/></svg></button>
+        <button class="btn" id="bpip" aria-label="Picture in picture"><svg><use href="#i-pip"/></svg></button>
+        <button class="btn txt" id="bspd" aria-label="Speed">1×</button>
+      </div>
       <div class="bar">
         <span class="tm" id="tc">0:00</span>
         <div id="sk"><div class="tr"></div><div class="fl"></div><div class="bd"></div></div>
         <span class="tm r" id="td">0:00</span>
       </div>
-      <div id="row2"><button class="chip glass" id="bcc"><svg><use href="#i-cc"/></svg>CC</button><button class="chip glass" id="baud"><svg><use href="#i-audio"/></svg>Audio</button><button class="chip glass" id="bspd">1×</button></div>
+      <div id="dock">
+        <button class="btn" id="blk" aria-label="Lock"><svg><use href="#i-lock"/></svg></button>
+        <i></i>
+        <button class="btn" id="brw" aria-label="Back 10 seconds"><svg><use href="#i-rew"/></svg></button>
+        <button class="btn" id="bprev" aria-label="Previous"><svg><use href="#i-prev"/></svg></button>
+        <button class="btn big" id="bplay" aria-label="Play or pause"><svg><use href="#i-play"/></svg></button>
+        <button class="btn" id="bnext" aria-label="Next"><svg><use href="#i-next"/></svg></button>
+        <button class="btn" id="bff" aria-label="Forward 10 seconds"><svg><use href="#i-ff"/></svg></button>
+        <i></i>
+        <button class="btn" id="bfit" aria-label="Screen fit"><svg><use href="#i-fit"/></svg></button>
+      </div>
     </div>
-    <div id="spd" class="glass"></div>
-    <div id="sheet" class="glass"></div>
+    <div id="spd"></div>
+    <div id="sheet"></div>
   </div>
 <div id="err" hidden></div>
-<div id="lk"><button id="ulk" class="glass" aria-label="Unlock"><svg><use href="#i-lock"/></svg></button></div>
+<div id="lk"><button id="ulk" aria-label="Unlock"><svg><use href="#i-lock"/></svg></button></div>
 </section>
 <div class="toast glass" id="toast"></div>
 
@@ -409,7 +460,7 @@ function renderList() {
   ul.appendChild(frag);
   $('#none').textContent = tab === 'hist' ? 'Nothing watched yet' : 'No videos found';
   $('#none').hidden = shown > 0 || !hasNative() || !$('#perm').hidden;
-  $('#sub').textContent = items.length ? items.length + (items.length === 1 ? ' video' : ' videos') + ' · v3' : 'Your videos, in liquid glass · v3';
+  $('#sub').textContent = items.length ? items.length + (items.length === 1 ? ' video' : ' videos') + ' · v4' : 'Your videos, in liquid glass · v4';
 }
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => { tab = b.dataset.t; folder = null; renderList(); $('#scroll').scrollTop = 0; });
 
@@ -452,10 +503,11 @@ function start(i, q) {
   $('#err').hidden = true; v.reset(); v._t = pos / 1000; trk = { a: [], s: [] }; refreshChips();
   pl.classList.add('open');
   document.documentElement.classList.add('playing');
-  rate = 1; markSpeed(); v._rate = 1;
+  rate = 1; markSpeed(); v._rate = 1; muted = false; $('#bmute').innerHTML = use('vol');
   call('open', { id: it.vid, pos }).then(r => {
     if (r && r.vol != null) v._vol = r.vol;
     if (r && r.br != null) bright = clamp(r.br, .05, 1);
+    applyFit(); applySub();
     if (pos) toast('Resuming from ' + fmt(pos / 1000));
   }).catch(e => { $('#err').textContent = 'Could not open: ' + ((e && e.message) || e); $('#err').hidden = false; });
   nat('playerOpen', { on: true }); nat('keepOn', { on: true }); nat('immersive', { on: true });
@@ -476,7 +528,7 @@ function stop() {
   renderList();
 }
 window.__back = () => {
-  if (locked) { toast('Screen is locked — tap the lock icon in the corner to unlock'); showUnlock(); return; }
+  if (locked) { showUnlock(); return; }
   if ($('#sheet').classList.contains('show')) { $('#sheet').classList.remove('show'); return; }
   stop();
 };
@@ -547,13 +599,13 @@ sk.addEventListener('pointerup', endDrag);
 sk.addEventListener('pointercancel', () => { dragging = false; sk.classList.remove('drag'); });
 
 /* speed menu */
-const SP = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const SP = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
 $('#spd').innerHTML = SP.map(s => '<button data-s="' + s + '">' + s + '×</button>').join('');
 function markSpeed() {
   $('#bspd').textContent = rate + '×';
   document.querySelectorAll('#spd button').forEach(b => b.classList.toggle('on', +b.dataset.s === rate));
 }
-$('#bspd').onclick = () => { $('#spd').classList.toggle('show'); clearTimeout(uiTimer); };
+$('#bspd').onclick = () => { $('#sheet').classList.remove('show'); $('#spd').classList.toggle('show'); clearTimeout(uiTimer); };
 $('#spd').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   rate = +b.dataset.s; v.playbackRate = rate; markSpeed();
@@ -580,13 +632,44 @@ window.__ps = o => {
 window.__tr = o => { trk = o || { a: [], s: [] }; refreshChips(); if ($('#sheet').classList.contains('show')) drawSheet(); };
 function refreshChips() { $('#bcc').classList.toggle('on', trk.s.some(t => t.sel)); }
 
+/* screen fit + subtitle look (saved on the phone) */
+const FITS = [
+  { n: 'Fit (original)', m: 0, z: 1 }, { n: 'Fill screen (crop)', m: 1, z: 1 }, { n: 'Stretch', m: 2, z: 1 },
+  { n: 'Fit width', m: 3, z: 1 }, { n: 'Fit height', m: 4, z: 1 }, { n: 'Zoom 125%', m: 0, z: 1.25 }, { n: 'Zoom 150%', m: 0, z: 1.5 }
+];
+const SUBC = [{ n: 'White', h: '#FFFFFF' }, { n: 'Yellow', h: '#FFE600' }, { n: 'Cyan', h: '#00E5FF' }, { n: 'Green', h: '#46E36B' }, { n: 'Orange', h: '#FF9A2E' }, { n: 'Pink', h: '#FF6FB5' }];
+const SUBZ = [{ n: 'Small', v: .04 }, { n: 'Medium', v: .0533 }, { n: 'Large', v: .07 }, { n: 'Huge', v: .09 }];
+let fitI = 0, subS = { c: '#FFFFFF', bg: 0, sz: .0533 };
+try { fitI = clamp(+localStorage.getItem('yp_fit') || 0, 0, FITS.length - 1); const o = JSON.parse(localStorage.getItem('yp_sub') || 'null'); if (o) subS = Object.assign(subS, o); } catch (e) {}
+function applyFit() { const f = FITS[fitI]; nat('fit', { m: f.m, z: f.z }); }
+function applySub() { nat('subStyle', { c: subS.c, bg: subS.bg, sz: subS.sz }); }
+function saveSub() { try { localStorage.setItem('yp_sub', JSON.stringify(subS)); } catch (e) {} applySub(); }
+
 /* subtitles + audio tracks */
 let sheetKind = '';
 function drawSheet() {
   const sh = $('#sheet'); sh.textContent = '';
   const add = (txt, on, fn) => { const b = document.createElement('button'); b.textContent = txt; if (on) b.className = 'on'; b.onclick = fn; sh.appendChild(b); };
   const head = t => { const e = document.createElement('h4'); e.textContent = t; sh.appendChild(e); };
-  if (sheetKind === 'sub') {
+  if (sheetKind === 'fit') {
+    head('SCREEN FIT');
+    const r0 = document.createElement('div'); r0.className = 'row';
+    FITS.forEach((f, i) => { const b = document.createElement('button'); if (i === fitI) b.className = 'on'; b.textContent = f.n; b.onclick = () => { fitI = i; try { localStorage.setItem('yp_fit', i); } catch (e) {} applyFit(); drawSheet(); }; r0.appendChild(b); });
+    sh.appendChild(r0);
+  } else if (sheetKind === 'subst') {
+    head('SUBTITLE COLOUR');
+    const r1 = document.createElement('div'); r1.className = 'row';
+    SUBC.forEach(c => { const b = document.createElement('button'); if (c.h === subS.c) b.className = 'on'; b.innerHTML = '<span class="dot" style="background:' + c.h + '"></span>' + c.n; b.onclick = () => { subS.c = c.h; saveSub(); drawSheet(); }; r1.appendChild(b); });
+    sh.appendChild(r1);
+    head('BACKGROUND');
+    const r2 = document.createElement('div'); r2.className = 'row';
+    ['Shadow', 'Outline', 'Black box'].forEach((n, i) => { const b = document.createElement('button'); if (i === subS.bg) b.className = 'on'; b.textContent = n; b.onclick = () => { subS.bg = i; saveSub(); drawSheet(); }; r2.appendChild(b); });
+    sh.appendChild(r2);
+    head('SIZE');
+    const r3 = document.createElement('div'); r3.className = 'row';
+    SUBZ.forEach(z => { const b = document.createElement('button'); if (z.v === subS.sz) b.className = 'on'; b.textContent = z.n; b.onclick = () => { subS.sz = z.v; saveSub(); drawSheet(); }; r3.appendChild(b); });
+    sh.appendChild(r3);
+  } else if (sheetKind === 'sub') {
     head('SUBTITLES');
     add('Off', !trk.s.some(t => t.sel), () => { call('pickText', { g: -1 }); sh.classList.remove('show'); });
     trk.s.forEach(t => add(t.n, t.sel, () => { call('pickText', { g: t.g, t: t.t }); sh.classList.remove('show'); }));
@@ -604,14 +687,25 @@ function openSheet(k) {
   nat('tracks');
 }
 $('#bcc').onclick = () => openSheet('sub');
+$('#baa').onclick = () => openSheet('subst');
+$('#bfit').onclick = () => openSheet('fit');
+$('#brw').onclick = () => { v.currentTime = Math.max(0, v.currentTime - 10); showUI(); };
+$('#bff').onclick = () => { v.currentTime = Math.min(v.duration || 1e9, v.currentTime + 10); showUI(); };
+$('#bpip').onclick = () => nat('enterPip');
+let muted = false, preVol = .5;
+$('#bmute').onclick = () => {
+  muted = !muted;
+  if (muted) { preVol = v.volume || .5; v.volume = 0; } else v.volume = preVol;
+  $('#bmute').innerHTML = use(muted ? 'mute' : 'vol'); showUI();
+};
 $('#baud').onclick = () => openSheet('aud');
 
 /* video lock */
 let ulkT = 0;
 function showUnlock() { const u = $('#ulk'); u.classList.add('show'); clearTimeout(ulkT); ulkT = setTimeout(() => u.classList.remove('show'), 2200); }
-$('#blk').onclick = () => { locked = true; pl.classList.add('lock'); pl.classList.remove('ui'); $('#spd').classList.remove('show'); $('#sheet').classList.remove('show'); toast('Locked'); };
+$('#blk').onclick = () => { locked = true; pl.classList.add('lock'); pl.classList.remove('ui'); $('#spd').classList.remove('show'); $('#sheet').classList.remove('show'); };
 $('#lk').addEventListener('pointerdown', e => { if (!e.target.closest('#ulk')) showUnlock(); });
-$('#ulk').onclick = () => { locked = false; pl.classList.remove('lock'); toast('Unlocked'); showUI(); };
+$('#ulk').onclick = () => { locked = false; pl.classList.remove('lock'); };
 
 /* picture in picture + rotate */
 $('#brot').onclick = () => { land = !land; nat('landscape', { on: land }); showUI(); };

@@ -27,6 +27,8 @@ import androidx.media3.common.VideoSize;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.AspectRatioFrameLayout;
+import androidx.media3.ui.CaptionStyleCompat;
+import androidx.media3.ui.SubtitleView;
 import androidx.media3.ui.PlayerView;
 import com.getcapacitor.annotation.ActivityCallback;
 import java.util.Collections;
@@ -59,6 +61,11 @@ public class VibePlugin extends Plugin {
   static VibePlugin inst;
   private ExoPlayer pl;
   private PlayerView pv;
+  private int fitM = 0;
+  private float fitZ = 1f;
+  private int subC = Color.WHITE;
+  private int subBg = 0;
+  private float subSz = 0.0533f;
   private Uri curUri;
   private String lastErr = "";
   private String diag = "";
@@ -232,10 +239,76 @@ public class VibePlugin extends Plugin {
     pv.setShutterBackgroundColor(Color.BLACK);
     pv.setBackgroundColor(Color.BLACK);
     pv.setPlayer(pl);
+    applyLook();
     pv.setVisibility(View.GONE);
     ViewGroup parent = (ViewGroup) getBridge().getWebView().getParent();
     parent.addView(pv, 0, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
         ViewGroup.LayoutParams.MATCH_PARENT));
+  }
+
+  private void applyLook() {
+    try {
+      if (pv == null) {
+        return;
+      }
+      int rm = AspectRatioFrameLayout.RESIZE_MODE_FIT;
+      if (fitM == 1) {
+        rm = AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
+      } else if (fitM == 2) {
+        rm = AspectRatioFrameLayout.RESIZE_MODE_FILL;
+      } else if (fitM == 3) {
+        rm = AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH;
+      } else if (fitM == 4) {
+        rm = AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT;
+      }
+      pv.setResizeMode(rm);
+      pv.setScaleX(fitZ);
+      pv.setScaleY(fitZ);
+      SubtitleView sv = pv.getSubtitleView();
+      if (sv != null) {
+        int bg = subBg == 2 ? 0xB3000000 : Color.TRANSPARENT;
+        int edge = subBg == 1 ? CaptionStyleCompat.EDGE_TYPE_OUTLINE : CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW;
+        if (subBg == 2) {
+          edge = CaptionStyleCompat.EDGE_TYPE_NONE;
+        }
+        sv.setApplyEmbeddedStyles(false);
+        sv.setApplyEmbeddedFontSizes(false);
+        sv.setStyle(new CaptionStyleCompat(subC, bg, Color.TRANSPARENT, edge, Color.BLACK, null));
+        sv.setFractionalTextSize(subSz);
+      }
+    } catch (Throwable t) {
+    }
+  }
+
+  @PluginMethod
+  public void fit(final PluginCall call) {
+    fitM = (int) num(call, "m", 0);
+    fitZ = (float) num(call, "z", 1);
+    act().runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        applyLook();
+        call.resolve();
+      }
+    });
+  }
+
+  @PluginMethod
+  public void subStyle(final PluginCall call) {
+    try {
+      subC = Color.parseColor(call.getString("c", "#FFFFFF"));
+    } catch (Throwable t) {
+      subC = Color.WHITE;
+    }
+    subBg = (int) num(call, "bg", 0);
+    subSz = (float) num(call, "sz", 0.0533);
+    act().runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        applyLook();
+        call.resolve();
+      }
+    });
   }
 
   private void push() {
